@@ -17,8 +17,21 @@ body:
       label: Details
       description: Add links, screenshots, or technical details if necessary.
       placeholder: "Link to ..."
-  - type: markdown
+  - type: dropdown
+    id: effort
     attributes:
-      value: |
-        Estimate the complexity of the task with this numbers.
-        ``1, 2, 3, 5, 8, 13, 21, 34, 55, 89``
+      label: Complexity
+      description: Estimate the complexity of the task. Higher number means more complex
+      options:
+        - 1
+        - 2
+        - 3
+        - 5
+        - 8
+        - 13
+        - 21
+        - 34
+        - 55
+        - 89
+    validations:
+      required: true
