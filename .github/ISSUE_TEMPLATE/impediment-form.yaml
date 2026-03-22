@@ -1,0 +1,13 @@
+name: Impediment
+description: Template for creating an Impediment entry
+labels: "Impediment"
+projects: "4Source/6"
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: Description
+      description: Description of what is unclear, a problem, ...
+      placeholder: "Describe here what..."
+    validations:
+      required: true

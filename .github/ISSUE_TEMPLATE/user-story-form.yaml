@@ -1,0 +1,29 @@
+name: User Story
+description: Template for creating a User Story
+labels: "User Story"
+projects: "4Source/6"
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: User Story
+      # https://www.business-wissen.de/artikel/user-storys-schreiben-beispiele-anleitung-tipps/
+      description: |
+        Who is requesting something? (=Role)
+        The requester is usually the later user of the system or the beneficiary of the solution to be developed.
+
+        What does the requester want? (=Function)
+        The requester wants something specific to happen. The clearer and more precise the wish is described in the user story, the more helpful it is for the development team to implement the requirements.
+
+        Why is this important for the business case? (=Benefit)
+        The requirement is intended to achieve a goal. The requester expects a benefit from it. Describing the reason for the requirement provides the development team with additional information for proper implementation.
+      placeholder: As a <Role>, I want <Function> so that <Benefit>.
+      value: "As a <Role>, I want <Function> so that <Benefit>."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Conditions that must be met for the story to be considered complete
+      placeholder: "- Criterion 1\n- Criterion 2"

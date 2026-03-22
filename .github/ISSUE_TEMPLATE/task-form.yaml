@@ -1,0 +1,24 @@
+name: Task
+description: Template for creating a task
+labels: "Task"
+projects: "4Source/6"
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: Description
+      description: Detailed description of the task so the team knows exactly what needs to be done.
+      placeholder: "Describe here what needs to be done..."
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Add links, screenshots, or technical details if necessary.
+      placeholder: "Link to ..."
+  - type: markdown
+    attributes:
+      value: |
+        Estimate the complexity of the task with this numbers.
+        ``1, 2, 3, 5, 8, 13, 21, 34, 55, 89``
