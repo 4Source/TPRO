@@ -1,0 +1,62 @@
+---
+# Keine Warnings aus ESP-IDF Framework
+HeaderFilterRegex: 'main/.*|components/.*'
+
+# System-Header ignorieren
+AnalyzeTemporaryDtors: false
+
+# Von Gemini erstellt - Bitte noch drücberschauen
+# Checks: '-' am Anfang deaktiviert eine Regel, '*' ist ein Platzhalter
+
+# -*,
+# bugprone-*,                               # Findet logische Fehler (z.B. Division durch 0, falsche sizeof)
+# performance-*,                            # Markiert ineffizienten Code (unnötige Kopien, teure Schleifen)
+# readability-*,                            # Erzwingt sauberen Stil (Klammern, Lesbarkeit, tote Codepfade)
+# portability-*,                            # Findet CPU-spezifischen Code (wichtig für 32-bit vs 64-bit)
+# modernize-*,                              # Schlägt sicherere C++ Features vor (nullptr statt NULL)
+# cppcoreguidelines-*,                      # Prüft auf C++ Sicherheitsstandards (Speichersicherheit)
+# -modernize-use-trailing-return-type,      # Deaktiviert: 'auto func() -> int' (unüblich in C/Embedded)
+# -cppcoreguidelines-pro-type-member-init,  # Deaktiviert: Zwingt jede Struct-Variable zur Initialisierung
+# -readability-magic-numbers,               # Deaktiviert: Meckert bei jeder Zahl (z.B. '42') ohne Konstante
+# cppcoreguidelines-no-malloc,              # Prüft auf malloc/free (wird unten konfiguriert)
+# misc-definitions-in-headers,              # Verhindert Variablen-Definitionen in .h Dateien (Linker-Fehler)
+# bugprone-exception-escape,                # Warnt, wenn eine Exception eine Funktion verlassen könnte
+# cert-err52-cpp,                           # Verhindert setjmp/longjmp (unsicher)
+# cppcoreguidelines-no-malloc,
+# -cppcoreguidelines-pro-type-const-cast,
+# fuchsia-no-exceptions                     # Verbietet 'throw' und 'try/catch' komplett
+
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  portability-*,
+  modernize-*,
+  cppcoreguidelines-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-pro-type-member-init,
+  -readability-magic-numbers,
+  cppcoreguidelines-no-malloc,
+  misc-definitions-in-headers,
+  bugprone-exception-escape,
+  cert-err52-cpp,
+  cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-pro-type-const-cast,
+  fuchsia-no-exceptions
+
+CheckOptions:
+  # Erlaubt malloc/free trotz 'no-malloc' Check (nützlich für PSRAM/ESP-IDF)
+  - key: cppcoreguidelines-no-malloc.Allocations
+    value: 'malloc,free,calloc,realloc'
+  
+  # Erzwingt Kleinschreibung für Variablen, Funktionen und Parameter (snake_case)
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+
+# Verhindert, dass Warnungen den Build stoppen (nur Anzeige im Editor)
+WarningsAsErrors: ''

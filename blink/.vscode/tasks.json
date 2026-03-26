@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ESP-IDF: Build Project",
+            "type": "shell",
+            "command": "source /opt/esp/activate_idf_v6.0.sh && idf.py build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Flash",
+            "type": "shell",
+            "command": "source /opt/esp/activate_idf_v6.0.sh && idf.py flash",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Monitor",
+            "type": "shell",
+            "command": "source /opt/esp/activate_idf_v6.0.sh && idf.py monitor",
+            "problemMatcher": []
+        }
+    ]
+}

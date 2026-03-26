@@ -1,0 +1,54 @@
+{
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    "C_Cpp.codeAnalysis.clangTidy.config": "",
+    "C_Cpp.codeAnalysis.clangTidy.headerFilter": "${workspaceFolder}/main/.*",
+    "C_Cpp.codeAnalysis.clangTidy.path": "/opt/esp/espressif_tools/tools/esp-clang/esp-20.1.1_20250829/esp-clang/bin/clang-tidy",
+    "C_Cpp.codeAnalysis.clangTidy.args": [
+        "--extra-arg=--target=xtensa-esp32s3-elf",
+        "--extra-arg=-D__xtensa__",
+        "--extra-arg=-DCONFIG_IDF_TARGET_ESP32S3",
+    ],
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.clang_format_path": "/opt/esp/espressif_tools/tools/esp-clang/esp-20.1.1_20250829/esp-clang/bin/clang-format",
+    "C_Cpp.clang_format_style": "file",
+    "editor.formatOnSave": true,
+    "terminal.integrated.profiles.linux": {
+        "ESP-IDF-Env": {
+            "path": "/bin/bash",
+            "args": [
+                "--rcfile",
+                "/opt/esp/activate_idf_v6.0.sh"
+            ],
+            "icon": "chip"
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "ESP-IDF-Env",
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#080808"
+    },
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 5000,
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(tools) Build IDF-Project",
+            "task": "ESP-IDF: Build Project"
+        },
+        {
+            "label": "$(zap) Flash Esp32s3",
+            "task": "ESP-IDF: Flash"
+        },
+        {
+            "label": "$(terminal) Monitor Esp32s3",
+            "task": "ESP-IDF: Monitor"
+        },
+        {
+            "label": "$(format-separator) Format",
+            "task": "ESP-IDF: Format All Files"
+        },
+        {
+            "label": "$(trash) Clean",
+            "task": "ESP-IDF: Full Clean"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+#!/bin/bash
+LOCKFILE="/var/lock/esp32/usb0.lock"
+DEVICE="/dev/ttyUSB0"
+
+# Hängt Microcontroller an besagten Port
+# TODO: Port als Argument übergeben
+if [ ! -e "$DEVICE" ]; then
+	echo "ERROR:	ESP32 ($DEVICE) nicht gefunden!"
+	echo "INFO:	Wenn angeschlossen und nicht erkannt, Port im Skript anpassen!"
+	exit 1
+fi
+
+# flock für Zugriff
+# -n: sofort abbrechen wenn belegt
+# -e: exklusiver Lock
+exec 9>"$LOCKFILE"
+if ! flock -n 9; then
+	USER_HOLDING=$(fuser $DEVICE 2>/dev/null | awk '{print $NF}')
+	echo "WARNING:	Der ESP32 wird gerade von einem anderen User genutzt!"
+	if [ ! -z "$USER_HOLDING" ]; then
+		echo "INFO:	Prozess-ID am Port: $USER_HOLDING"
+	fi
+	echo "INFO:	Bitte warte kurz oder gebe Bescheid..."
+	exit 1
+fi
+
+echo "INFO:	USB Port gelockt!"
+echo "INFO:	Führe Befehl auf USB aus..."
+
+# TODO: wenn Port übergeben erst ab 2. PARAM
+"$@"

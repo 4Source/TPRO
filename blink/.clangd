@@ -1,0 +1,23 @@
+CompileFlags:
+  CompilationDatabase: "."
+  Remove: [-fno-tree-switch-conversion, -fpatchable-function-entry*, -fno-shrink-wrap, -fstrict-volatile-bitfields, -fzero-init-padding-bits*, -fno-malloc-dce, -mlongcalls, -mlong-calls, --query-driver*, -W*]
+  Add:
+    - "--target=arm-none-eabi" 
+    - "-D__xtensa__"
+    - "-DCONFIG_IDF_TARGET_ESP32S3"
+    # Diese Pfade zwingen Clangd, die ESP-System-Header zu finden:
+    - "-I/opt/esp/espressif_tools/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/lib/gcc/xtensa-esp-elf/15.2.0/include"
+    - "-I/opt/esp/esp-idf/components/esp_libc/platform_include"
+    - "-I/opt/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include"
+    - "-I/opt/esp/esp-idf/components/esp_hw_support/include"
+    - "-I/opt/esp/esp-idf/components/esp_common/include"
+    - "-I/opt/esp/esp-idf/components/soc/esp32s3/include"
+
+Index:
+  Background: Build
+
+---
+If:
+  PathMatch: .*\.c
+CompileFlags:
+  Add: ["--query-driver=/opt/esp/espressif_tools/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc"]
