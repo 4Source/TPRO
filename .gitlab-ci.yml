@@ -19,6 +19,8 @@ build-job-preact:
       - Software/components/webserver/www/
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
 
 build-job-idf:
   stage: build
@@ -33,6 +35,8 @@ build-job-idf:
     expire_in: 1 hour
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
 
 test-on-esp:
   stage: test
@@ -41,6 +45,8 @@ test-on-esp:
     - cd "$CI_PROJECT_DIR/Software" && /usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'pytest pytest/*.py --embedded-services esp,idf --target esp32s3 --app-path .'
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" # TODO: muss man sich überlegen ob bei jedem push usb besetzt werden soll
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
   timeout: 2m # spätestens nach 2 Minuten usb port wieder freigeben!
 
 test-2:
@@ -56,6 +62,8 @@ deploy-prod:
     - echo "Deploy..."
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
 #  environment: production
 #  rules:
 #    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH # Nur auf main
