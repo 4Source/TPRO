@@ -61,6 +61,7 @@ extern "C" void app_main(void) {
 extern "C" void app_main(void) {
 	esp_err_t ret;
 
+	printf("LED Wall startup\n");
 	/**
 	 * Needs to be initialized once per app. Will allow persistent storage in the flash.
 	 *
