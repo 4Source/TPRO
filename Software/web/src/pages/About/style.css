@@ -1,0 +1,22 @@
+.about img {
+	margin-bottom: 1.5rem;
+}
+
+.about img:hover {
+	filter: drop-shadow(0 0 2em #673ab8aa);
+}
+
+.about section {
+	margin-top: 5rem;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	column-gap: 1.5rem;
+}
+
+@media (max-width: 639px) {
+	.about section {
+		margin-top: 5rem;
+		grid-template-columns: 1fr;
+		row-gap: 1rem;
+	}
+}

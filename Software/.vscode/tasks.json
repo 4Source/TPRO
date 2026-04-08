@@ -1,0 +1,106 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ESP-IDF: Build Project",
+            "type": "shell",
+            "command": "idf.py build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Flash",
+            "type": "shell",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py flash -p /dev/ttyACM0'",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Monitor",
+            "type": "shell",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py monitor'",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Build Flash Monitor",
+            "dependsOn": [
+                "ESP-IDF: Build Project",
+                "ESP-IDF: Flash",
+                "ESP-IDF: Monitor"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "ESP-IDF: Reconfigure",
+            "type": "shell",
+            "command": "idf.py reconfigure",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP-IDF: Full Clean",
+            "type": "shell",
+            "command": "idf.py fullclean && rm -rf components/webserver/www/ && rm -rf components/webserver/include/embedded_files.hpp",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clang: Format",
+            "type": "shell",
+            "command": "echo 'clang formatting...' && git ls-files '*.c' '*.cpp' '*.h' '*.hpp' | xargs clang-format -i",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clang: Tidy",
+            "type": "shell",
+            "command": "echo 'clang tidy...' && git ls-files '*.c' '*.cpp' '*.h' '*.hpp' | xargs -I {} clang-tidy -p build -fix -quiet {}",
+            "problemMatcher": []
+        },
+        {
+            "label": "Preact: Develop",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "cd \"$(git rev-parse --show-toplevel)/Software/web\" && npm run dev"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Preact: Build",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "cd \"$(git rev-parse --show-toplevel)/Software/web\" && npm run build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Preact: Format",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "cd \"$(git rev-parse --show-toplevel)/Software/web\" && npm run lint"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Project: Format",
+            "dependsOn": [
+                "Clang: Format",
+                "Preact: Format"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "Project: Build",
+            "dependsOn": [
+                "Preact: Build",
+                "ESP-IDF: Build Project"
+            ],
+            "dependsOrder": "sequence"
+        }
+    ]
+}

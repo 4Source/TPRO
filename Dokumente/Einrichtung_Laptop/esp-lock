@@ -1,0 +1,51 @@
+#!/bin/bash
+LOCKDIR="/tmp/esp32"
+LOCKFILE="/tmp/esp32/usb0.lock"
+RED='\033[0;31m'
+NC='\033[0m'
+
+if [ "$#" -lt 2 ]; then
+    echo "NUTZUNG: $0 <PORT> <BEFEHL...>"
+    echo "BEISPIEL: $0 /dev/ttyUSB0 idf.py flash"
+    exit 1
+fi
+
+DEVICE="$1"
+shift # Schiebe Port Param raus
+
+# Hängt Microcontroller an besagten Port
+if [ ! -e "$DEVICE" ]; then
+	echo "ERROR:	ESP32 ($DEVICE) nicht gefunden!"
+	echo "INFO:	Wenn angeschlossen und nicht erkannt, Port im Skript anpassen!"
+	exit 1
+fi
+
+if [ ! -d "$LOCKDIR" ]; then
+    mkdir -p "$LOCKDIR" 2>/dev/null
+fi
+
+touch "$LOCKFILE" 2>/dev/null
+chmod 666 "$LOCKFILE" 2>/dev/null
+
+# flock für Zugriff
+# -n: sofort abbrechen wenn belegt
+# -e: exklusiver Lock
+exec 9<>"$LOCKFILE"
+if ! flock -n 9; then
+	echo -e "${RED}WARNING:	Der ESP32 wird gerade von einem anderen User genutzt!"
+	HOLDER=$(cat "$LOCKFILE" 2>/dev/null)
+	echo -e "BESETZT: Der User '${HOLDER:-unbekannt}' nutzt gerade $DEVICE"
+	echo -e "INFO:	Bitte warte kurz oder gebe Bescheid...${NC}"
+	exit 1
+fi
+
+echo "INFO:	USB Port gelockt!"
+echo "INFO:	Führe Befehl auf USB aus..."
+
+# Name des Halters in File schreiben
+printf "%s" "$USER" >&9
+truncate -s $(expr length "$USER") "$LOCKFILE"
+
+# Führe übergebenen Befehl aus
+exec "$@"
+# Der Lock wird automatisch freigegeben, wenn Skript endet

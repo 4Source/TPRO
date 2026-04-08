@@ -1,0 +1,19 @@
+menu "Webserver configuration"
+
+    config LISTEN_WIFI
+        bool "webserver should listen to the WiFi interface"
+        depends on CONNECT_WIFI
+        default y if CONNECT_WIFI
+        help
+            Webserver can listen to WiFi, and/or Ethernet interface for requests. 
+            Choose this option to enable connection with WiFi.
+
+    config LISTEN_ETHERNET
+        bool "webserver should listen to the Ethernet interface"
+        depends on CONNECT_ETHERNET
+        default y if CONNECT_ETHERNET
+        help
+            Webserver can listen to WiFi, and/or Ethernet interface for requests. 
+            Choose this option to enable connection with Ethernet.
+
+endmenu
