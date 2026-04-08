@@ -1,0 +1,64 @@
+default:
+  tags:
+    - led-weltkarte
+  before_script:
+    - . /opt/esp/activate_idf_v6.0.sh
+
+stages:
+  - build
+  - test
+  - deploy
+
+build-job-preact:
+  stage: build
+  script:
+    - echo "Hello, $GITLAB_USER_LOGIN! - Building preact"
+    - cd "$CI_PROJECT_DIR/Software/web" && npm i && npm run build
+  artifacts:
+    paths:
+      - Software/components/webserver/www/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+build-job-idf:
+  stage: build
+  needs: ["build-job-preact"]
+  script:
+    - echo "Building project with ESP-IDF"
+    - cd "$CI_PROJECT_DIR/Software" && idf.py build
+  artifacts:
+    paths:
+      - Software/build/
+      - Software/sdkconfig
+    expire_in: 1 hour
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+test-on-esp:
+  stage: test
+  script:
+    - echo "Run pytests for Hardware tests"
+    - cd "$CI_PROJECT_DIR/Software" && /usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'pytest pytest/*.py --embedded-services esp,idf --target esp32s3 --app-path .'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" # TODO: muss man sich überlegen ob bei jedem push usb besetzt werden soll
+  timeout: 2m # spätestens nach 2 Minuten usb port wieder freigeben!
+
+test-2:
+  stage: test
+  script:
+    - echo "Tests without need to connect to USB"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+deploy-prod:
+  stage: deploy
+  script:
+    - echo "Deploy..."
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+#  environment: production
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH # Nur auf main
+#      when: manual                             
+#    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH # Mauell auch von andren Branches
+#      when: manual

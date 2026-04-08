@@ -23,3 +23,7 @@ managed_components/
 dependencies.lock
 # If ESP-IDF tools are installed/referenced locally to the project
 .espressif/
+#pytest
+pytest_logs/
+pytest/__pycache__/
+pytest_embedded_files/
