@@ -1,5 +1,16 @@
 # TPRO Light-Wall
 
+## Contributing
+- Each developer should checkout his ```feature Branch``` from the ```dev Branch``` !
+- After clone: ```git checkout dev && git checkout -b myfeature```
+- Merge Requests have to be made for destination ```dev```
+#### Naming Feature Branches:
+- ```<issue_number>-<feature/bug>-<decription>```
+#### Naming Folders/Files:
+- Structure inside Software Folder: ```src/my_layer/my_code.cpp```
+- Structure in other Folders and Files (Dokumente): ```Documents/Sequence_Diagrams/Diagram_Day_Night.png```
+
+Pay attention to capitalization and underscores outside of code Folders!
 
 
 ## Getting started

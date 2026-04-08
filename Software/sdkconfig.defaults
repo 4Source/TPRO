@@ -1,0 +1,9 @@
+    # This file was generated using idf.py save-defconfig. It can be edited manually.
+    # Espressif IoT Development Framework (ESP-IDF) 6.0.0 Project Minimal Configuration
+    #
+    # default:
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_LWIP_LOCAL_HOSTNAME="light-wall"
+CONFIG_LWIP_IPV6=n
