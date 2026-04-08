@@ -15,4 +15,3 @@ dependencies:
   #   # All dependencies of `main` are public by default.
   #   public: true
   espressif/json_parser: ^1.0.3
-  espressif/led_strip: ^3.0.0
