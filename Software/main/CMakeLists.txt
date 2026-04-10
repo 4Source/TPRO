@@ -3,8 +3,8 @@ set(requires
         webserver 
         config_manager
         nvs_flash
-        led effects
-        output_layer
+        led 
+        effects
         esp_driver_gpio
         log
         driver)

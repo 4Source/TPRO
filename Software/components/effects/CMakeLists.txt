@@ -31,9 +31,3 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES  ${requires})
 
 message(STATUS "Configure effects component done")
-
-# idf_component_register(
-#     SRC_DIRS "day_night" "."
-#     INCLUDE_DIRS "interface" "day_night"
-#     REQUIRES led espressif__json_parser
-# )
