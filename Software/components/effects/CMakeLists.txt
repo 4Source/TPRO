@@ -1,6 +1,7 @@
 # Set source files and include directories
 set(srcs 
-        day_night_effect.cpp)
+        day_night_effect.cpp
+        blinking_effect.cpp)
 set(include_dirs include) #effects.hpp
 set(requires 
         espressif__json_parser 
