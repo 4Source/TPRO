@@ -1,9 +1,11 @@
 #pragma once
 
+#include "config_observer.hpp"
 #include "effect.hpp"
 #include "led_frame.hpp"
 
 #include <esp_err.h>
+#include <string>
 #include <vector>
 
 // Diese Klassen werden später von anderen Teammitgliedern
@@ -11,29 +13,13 @@
 class ConfigManager;
 class TimeApi;
 
-// Schnittstelle für den späteren Output Layer.
-// Ein späterer LED-Controller / Renderer / Hardware-Treiber
-// kann diese Schnittstelle implementieren.
-class ILedFrameSink {
-  public:
-	virtual ~ILedFrameSink() = default;
-	virtual esp_err_t write(const LedFrame &frame) = 0;
-};
-
 // Verwaltet den aktuellen Effekt, erzeugt LED-Daten und gibt
 // diese über eine Schnittstelle an den späteren Output Layer.
-class LightEffectManager {
+class LightEffectManager : public ConfigObserver {
   public:
 	LightEffectManager(ConfigManager *config_manager = nullptr, TimeApi *time_api = nullptr);
 
 	~LightEffectManager() = default;
-
-	// Output-Layer-Anbindung
-	// "subscribe / unsubscribe" ist hier für Empfänger gedacht,
-	// die LedFrame-Daten erhalten sollen.
-	// ----------------------------------------------------------
-	esp_err_t subscribe(ILedFrameSink *sink);
-	esp_err_t unsubscribe(ILedFrameSink *sink);
 
 	// Effektverwaltung
 	esp_err_t set_effect(Effect *effect);
@@ -47,25 +33,20 @@ class LightEffectManager {
 	Effect *get_effect() const;
 
 	// Update-Logik
-	esp_err_t update(const DateTime &time_stamp);
+	esp_err_t run(const DateTime &time_stamp);
 
-	// Platzhalter für spätere TimeApi-Integration
-	esp_err_t update();
-
-	// Schreibt den zuletzt berechneten Frame an alle Sinks
-	esp_err_t write_led_data();
+	esp_err_t run();
 
 	// Zugriff auf den letzten berechneten Frame
 	const LedFrame &get_led_data() const;
 
-	// Anschlussstellen für spätere Integration
+	// System-Anbindung & Konfiguration
 	void set_config_manager(ConfigManager *config_manager);
 	void set_time_api(TimeApi *time_api);
 
-	// Platzhalter für spätere ConfigManager-Anbindung
-	// Kann später z. B. vom ConfigManager aufgerufen werden,
-	// wenn sich die Konfiguration geändert hat.
-	esp_err_t on_config_changed();
+	// Observer Interface
+	void update(const std::string &key) override;
+	void update(const std::vector<std::string> &keys) override;
 
 	// Attribut aus dem Klassendiagramm
 	void set_speed(float new_speed);
@@ -73,11 +54,10 @@ class LightEffectManager {
 
   private:
 	LedFrame data{};
-	ConfigManager *config_manager = nullptr; // später nutzen
+	ConfigManager *config_manager = nullptr;
 	Effect *current_effect = nullptr;
 	float speed = 1.0f;
 	TimeApi *time_api = nullptr; // später nutzen
 
-	std::vector<ILedFrameSink *> sinks;
 	std::vector<Effect *> available_effects;
 };

@@ -4,7 +4,8 @@ set(srcs
 set(include_dirs include)
 set(requires 
         effects 
-        led)
+        led
+        config_manager)
 
 message(STATUS "Configure light-effect-manager component: ")
 
