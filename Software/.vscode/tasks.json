@@ -86,7 +86,7 @@
             "command": "bash",
             "args": [
                 "-lc",
-                "cd \"$(git rev-parse --show-toplevel)/Software/web\" && npm i && npm run lint"
+                "cd \"$(git rev-parse --show-toplevel)/Software/web\" && npm i && npm run lint-fix"
             ],
             "problemMatcher": []
         },

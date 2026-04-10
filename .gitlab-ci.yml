@@ -8,6 +8,7 @@ variables:
   TIDY_ESP_FLAGS: "--target=xtensa-esp32s3-elf -D__xtensa__ -DCONFIG_IDF_TARGET_ESP32S3"
 
 stages:
+  - web-checks
   - build
   - clang-checks
   - test
@@ -17,11 +18,30 @@ stages:
 # Falls Push auf main + Änderungen in Software/
 # Falls MR an main + Änderungen in Software/
 
+web-lint-check:
+  stage: web-checks
+  script: 
+    - echo "Checking website formatting rules"
+    - cd "$CI_PROJECT_DIR/Software/web"
+    - npm i
+    - npm run lint
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/web/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+
 build-job-preact:
   stage: build
   script:
     - echo "Hello, $GITLAB_USER_LOGIN! - Building preact"
-    - cd "$CI_PROJECT_DIR/Software/web" && npm i && npm run build
+    - cd "$CI_PROJECT_DIR/Software/web" 
+    - npm i
+    - npm run build
   artifacts:
     paths:
       - Software/components/webserver/www/
