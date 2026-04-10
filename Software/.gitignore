@@ -1,6 +1,7 @@
 # Build artifacts and directories
 **/build/
 build/
+build_clang/
 *.o
 *.a
 *.out
@@ -19,7 +20,6 @@ sdkconfig
 /components/.idf/
 **/components/.idf/
 # For modern ESP-IDF component manager
-managed_components/
 dependencies.lock
 # If ESP-IDF tools are installed/referenced locally to the project
 .espressif/
@@ -27,3 +27,4 @@ dependencies.lock
 pytest_logs/
 pytest/__pycache__/
 pytest_embedded_files/
+warnings.txt

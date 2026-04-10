@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-
 ConfigManager::ConfigManager() {
 	this->config = ConfigType(); // default
 }
@@ -20,7 +19,7 @@ void ConfigManager::notify_observers(const std::string &key) {
 }
 
 bool ConfigManager::add_observer(const std::string &key, ConfigObserver &observer) {
-	if (observerlist.find(key) != observerlist.end()) {
+	if (observerlist.contains(key)) { // ACHTUNG: Hier wurd contains anstatt find verwendent um clang-tidy zufrieden zu stellen
 		observerlist[key].push_back(&observer);
 		return true;
 	}
@@ -40,14 +39,15 @@ bool ConfigManager::remove_observer(const std::string &key, const ConfigObserver
 }
 
 //(GET)
-auto ConfigManager::get_config(const std::string &key) {
+auto ConfigManager::get_config(const std::string &key) const {
 	// maybe change to a map if amount of keys becomes too long
 	if (key == "current_effect") {
 		return config.current_effect;
-	} else if (key == "effects_path") {
+	}
+	if (key == "effects_path") {
 		return config.effects_path;
-	} else
-		return std::filesystem::path("");
+	}
+	return std::filesystem::path("");
 }
 
 //(PUT)
@@ -64,7 +64,7 @@ void ConfigManager::set_config(const std::string &key, const std::string &value)
 
 //(POST)
 void ConfigManager::set_config(ConfigType new_config) {
-	config = new_config;
+	config = std::move(new_config);
 	notify_observers("current_effect");
 	notify_observers("effects_path");
 }

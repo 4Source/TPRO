@@ -1,6 +1,6 @@
 #pragma once
-#include <esp_wifi_types_generic.h>
 #include <esp_err.h>
+#include <esp_wifi_types_generic.h>
 
 /**
  * Configures the network connections Wi-Fi and/or Ethernet, as selected in menuconfig.
@@ -51,7 +51,7 @@ esp_err_t connect_network(void);
  * @param reason The reason to convert
  * @returns The string representation
  */
-constexpr const char* wifi_reason_to_string(wifi_err_reason_t reason);
+constexpr const char *wifi_reason_to_string(wifi_err_reason_t reason);
 
 /**
  * Converts the `wifi_err_reason_t` (IEEE 802.11) to the corrsponding string
@@ -59,4 +59,4 @@ constexpr const char* wifi_reason_to_string(wifi_err_reason_t reason);
  * @param reason The reason to convert
  * @returns The string representation
  */
-constexpr const char* wifi_reason_to_string(uint8_t reason);
+constexpr const char *wifi_reason_to_string(uint8_t reason);

@@ -55,13 +55,15 @@ extern "C" void app_main(void) {
 */
 #include "network.hpp"
 #include "webserver.hpp"
+#include <esp_log.h>
 #include <esp_wifi.h>
 #include <nvs_flash.h>
 
 extern "C" void app_main(void) {
-	esp_err_t ret;
+	esp_err_t ret = ESP_OK;
 
-	printf("LED Wall startup\n");
+	// Only used for pytest_boot
+	ESP_LOGI("MAIN", "LED Wall startup");
 	/**
 	 * Needs to be initialized once per app. Will allow persistent storage in the flash.
 	 *
