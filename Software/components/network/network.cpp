@@ -1,20 +1,25 @@
 #include "network.hpp"
+#include <cstring>
 #include <esp_check.h>
 #include <esp_eth.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
-
-static const char *TAG = "network";
-
+static constexpr const char *kTag = "network";
 /*
  * FreeRTOS event group to signal when we are connected to WiFi
  */
+
+// TODO: Mybe avoid global vars
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static EventGroupHandle_t s_wifi_event_group;
+static int s_retry_num = 0;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_CONNECTION_FAILED_BIT BIT1
-
-static int s_retry_num = 0;
+// Cognitive Complexity reduziert
+static void handle_wifi_event(int32_t event_id, void *event_data);
+static void handle_ip_event(int32_t event_id, void *event_data);
 
 /**
  * Event handler for WiFi and IP events.
@@ -33,30 +38,39 @@ static int s_retry_num = 0;
  * - [ESP-IDF Event Loop Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/system/esp_event.html)
  */
 static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+	if (event_base == WIFI_EVENT) {
+		handle_wifi_event(event_id, event_data);
+	} else if (event_base == IP_EVENT) {
+		handle_ip_event(event_id, event_data);
+	}
+}
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+static void handle_wifi_event(int32_t event_id, void *event_data) {
+	switch (event_id) {
 	/**
 	 * Triggered when the WiFi is successfully started in station mode. The task will initialize the LwIP network interface (netif) and tries to
 	 * connect to the AP.
 	 */
-	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-		ESP_LOGD(TAG, "WiFi is successfully stated in station mode");
-
-		// Try to connect to the configured AP
+	case WIFI_EVENT_STA_START:
+		ESP_LOGD(kTag, "WiFi is successfully stated in station mode");
 		esp_wifi_connect();
-	}
+		break;
 	/**
 	 * Triggered when the WiFi is successfully stoped and was in station mode. The task will release the IP address, stop the DHCP client, remove
 	 * TCP/UDP related connections, and clear the LwIP station.
 	 */
-	else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_STOP) {
-		ESP_LOGD(TAG, "WiFi is successfully stoped");
+	case WIFI_EVENT_STA_STOP:
+		ESP_LOGD(kTag, "WiFi is successfully stoped");
 		xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-	}
+		break;
 	/**
 	 * Triggered when the station successfully connects to the AP. Starts the DHCP client and begins DHCP process of getting the IP address.
 	 */
-	else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
-		wifi_event_sta_connected_t *event = (wifi_event_sta_connected_t *)event_data;
-		ESP_LOGI(TAG, "WiFi is successfully connected to SSID: %s", (char *)event->ssid);
+	case WIFI_EVENT_STA_CONNECTED: {
+		auto *event = static_cast<wifi_event_sta_connected_t *>(event_data);
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		ESP_LOGI(kTag, "WiFi is successfully connected to SSID: %s", reinterpret_cast<char *>(event->ssid));
+		break;
 	}
 	/**
 	 * Triggered:
@@ -65,9 +79,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
 	 * - when WiFi connection is disrupted.
 	 * The task shuts down the stations LwIp netif and clear the UDP/TCP connections.
 	 */
-	else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-		wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
-		ESP_LOGI(TAG, "WiFi is disconnected from SSID: %s (%s)", (char *)event->ssid, wifi_reason_to_string(event->reason));
+	case WIFI_EVENT_STA_DISCONNECTED: {
+		auto *event = static_cast<wifi_event_sta_disconnected_t *>(event_data);
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		ESP_LOGI(kTag, "WiFi is disconnected from SSID: %s (%s)", reinterpret_cast<char *>(event->ssid), wifi_reason_to_string(event->reason));
 		xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 
 		// TODO: Only try to reconnect when connection lost or not able to connect on first try
@@ -77,80 +92,114 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
 		if (s_retry_num < CONFIG_WIFI_CONN_MAX_RETRY) {
 			esp_wifi_connect();
 			s_retry_num++;
-			ESP_LOGI(TAG, "Retry connecting to %s...", (char *)event->ssid);
-		}
-		// Cancel wifi connection because of too many tries to connect to AP
-		else {
-			ESP_LOGE(TAG, "Too many retries for trying to connect to SSID: %s", (char *)event->ssid);
+			// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+			ESP_LOGI(kTag, "Retry connecting to %s...", reinterpret_cast<char *>(event->ssid));
+		} else {
+			// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+			ESP_LOGE(kTag, "Too many retries for trying to connect to SSID: %s", reinterpret_cast<char *>(event->ssid));
 			xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTION_FAILED_BIT);
 		}
+		break;
 	}
+	default:
+		break;
+	}
+}
+
+static void handle_ip_event(int32_t event_id, void *event_data) {
+	switch (event_id) {
 	/**
 	 * Triggered when the DHCP client successfully gets the IPv4 address from the DHCP server, or when the IPv4 address is changed. Everything is
 	 * ready and the application can begin its tasks.
 	 */
-	else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-		ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-		ESP_LOGI(TAG, "Successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
+	case IP_EVENT_STA_GOT_IP: {
+		auto *event = static_cast<ip_event_got_ip_t *>(event_data);
+		ESP_LOGI(kTag, "Successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 		s_retry_num = 0;
 		xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+		break;
 	}
 	/**
 	 * Triggered when the IPv4 address becomes invalid. This does NOT happen immediately after a disconnect.
 	 *
 	 * For debug purposes.
 	 */
-	else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_LOST_IP) {
-		ESP_LOGW(TAG, "Lost IPv4 address");
+	case IP_EVENT_STA_LOST_IP:
+		ESP_LOGW(kTag, "Lost IPv4 address");
+		break;
+	default:
+		break;
 	}
 }
-
-esp_err_t init_network(void) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+esp_err_t init_network() {
 #if CONFIG_CONNECT_ETHERNET
-	ESP_LOGI(TAG, "Setup ethernet connection...");
-	ESP_LOGW(TAG, "Ethernet is not implemented yet.");
+	ESP_LOGI(kTag, "Setup ethernet connection...");
+	ESP_LOGW(kTag, "Ethernet is not implemented yet.");
 #endif
 #if CONFIG_CONNECT_WIFI
 	s_wifi_event_group = xEventGroupCreate();
 
-	ESP_LOGI(TAG, "Setup wifi connection...");
-
+	ESP_LOGI(kTag, "Setup wifi connection...");
 	// Initialize wifi and start the task
 	wifi_init_config_t wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_cfg), TAG, "Failed to initialize wifi");
-
+	esp_err_t err = esp_wifi_init(&wifi_cfg);
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to initialize wifi");
+		return err;
+	}
 	// Register event handler
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr), TAG,
-						"Failed to register WiFi event handler");
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr), TAG,
-						"Failed to register WiFi IP event handler");
+	err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr);
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to register WiFi event handler");
+		return err;
+	}
 
+	err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr);
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to register WiFi IP event handler");
+		return err;
+	}
 	// Configure the wifi
 	wifi_config_t wifi_config{};
-	strncpy((char *)wifi_config.sta.ssid, CONFIG_WIFI_SSID, sizeof(wifi_config.sta.ssid));
-	strncpy((char *)wifi_config.sta.password, CONFIG_WIFI_PASSWORD, sizeof(wifi_config.sta.password));
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+	std::strncpy(reinterpret_cast<char *>(wifi_config.sta.ssid), CONFIG_WIFI_SSID, sizeof(wifi_config.sta.ssid) - 1);
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+	std::strncpy(reinterpret_cast<char *>(wifi_config.sta.password), CONFIG_WIFI_PASSWORD, sizeof(wifi_config.sta.password) - 1);
 	wifi_config.sta.scan_method = WIFI_FAST_SCAN;
 
-	ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "Failed to set wifi to station mode ");
-	ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), TAG, "Failed to set wifi configuration");
+	err = esp_wifi_set_mode(WIFI_MODE_STA);
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to set wifi to station mode ");
+		return err;
+	}
 
-	ESP_LOGI(TAG, "Setup wifi connection finished");
+	err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to set wifi configuration");
+		return err;
+	}
+
+	ESP_LOGI(kTag, "Setup wifi connection finished");
 #endif
 	return ESP_OK;
 }
-
-esp_err_t connect_network(void) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+esp_err_t connect_network() {
 #if CONFIG_CONNECT_ETHERNET
-	ESP_LOGI(TAG, "Start ethernet connection...");
-	ESP_LOGW(TAG, "Ethernet is not implemented yet.");
+	ESP_LOGI(kTag, "Start ethernet connection...");
+	ESP_LOGW(kTag, "Ethernet is not implemented yet.");
 #endif
 #if CONFIG_CONNECT_WIFI
 	s_wifi_event_group = xEventGroupCreate();
 
-	ESP_LOGI(TAG, "Start wifi connection...");
-
+	ESP_LOGI(kTag, "Start wifi connection...");
 	// Start wifi
-	ESP_RETURN_ON_ERROR(esp_wifi_start(), TAG, "Failed to start WiFi");
+	esp_err_t err = esp_wifi_start();
+	if (err != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to start WiFi");
+		return err;
+	}
 
 	/*
 	 * Waiting until either:
@@ -160,12 +209,14 @@ esp_err_t connect_network(void) {
 	EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_CONNECTION_FAILED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
 	// xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually happened.
-	if (bits & WIFI_CONNECTED_BIT) {
-		ESP_LOGI(TAG, "Connected to AP SSID: %s", CONFIG_WIFI_SSID);
-	} else if (bits & WIFI_CONNECTION_FAILED_BIT) {
-		ESP_RETURN_ON_ERROR(ESP_ERR_WIFI_NOT_CONNECT, TAG, "Failed to connect to SSID: %s", CONFIG_WIFI_SSID);
+	if ((bits & WIFI_CONNECTED_BIT) != 0) {
+		ESP_LOGI(kTag, "Connected to AP SSID: %s", CONFIG_WIFI_SSID);
+	} else if ((bits & WIFI_CONNECTION_FAILED_BIT) != 0) {
+		ESP_LOGE(kTag, "Failed to connect to SSID: %s", CONFIG_WIFI_SSID);
+		return ESP_ERR_WIFI_NOT_CONNECT;
 	} else {
-		ESP_RETURN_ON_ERROR(ESP_FAIL, TAG, "Unexpected event");
+		ESP_LOGE(kTag, "Unexpected event");
+		return ESP_FAIL;
 	}
 #endif
 	return ESP_OK;

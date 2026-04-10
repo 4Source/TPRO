@@ -1,9 +1,7 @@
 ---
 # Keine Warnings aus ESP-IDF Framework
-HeaderFilterRegex: 'main/.*|components/.*'
-
-# System-Header ignorieren
-AnalyzeTemporaryDtors: false
+SystemHeaders: false
+HeaderFilterRegex: '^(main/|components/).*'
 
 # Setze c++26 wie in idf compiler config gnu++26
 ExtraArgs:
@@ -29,6 +27,7 @@ ExtraArgs:
 # cppcoreguidelines-no-malloc,
 # -cppcoreguidelines-pro-type-const-cast,
 # fuchsia-no-exceptions                     # Verbietet 'throw' und 'try/catch' komplett
+# -bugprone-easily-swappable-parameters     # ignoriere easy swap check
 
 Checks: >
   -*,
@@ -47,7 +46,9 @@ Checks: >
   cert-err52-cpp,
   cppcoreguidelines-no-malloc,
   -cppcoreguidelines-pro-type-const-cast,
-  fuchsia-no-exceptions
+  fuchsia-no-exceptions,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers
 
 CheckOptions:
   # Erlaubt malloc/free trotz 'no-malloc' Check (nützlich für PSRAM/ESP-IDF)
@@ -62,5 +63,20 @@ CheckOptions:
   - key: readability-identifier-naming.ParameterCase
     value: lower_case
 
-# Verhindert, dass Warnungen den Build stoppen (nur Anzeige im Editor)
-WarningsAsErrors: ''
+  - key:            readability-function-cognitive-complexity.Threshold
+    value:          '50' # Erhöhe Complexität auf 50 - default waren 25
+
+  - key:            readability-identifier-naming.GlobalConstantPrefix
+    value:          k
+  - key:            readability-identifier-naming.GlobalConstantCase
+    value:          CamelCase
+  - key:            readability-identifier-naming.StaticConstantCase
+    value:          CamelCase
+  - key:            readability-identifier-naming.StaticConstantPrefix
+    value:          k
+  - key:            readability-identifier-naming.ConstexprVariablePrefix
+    value:          k
+  - key:            readability-identifier-naming.ConstexprVariableCase
+    value:          CamelCase
+# Warnungen als Fehler ausgeben für CI
+WarningsAsErrors: '*'

@@ -53,7 +53,11 @@
         {
             "label": "Clang: Tidy",
             "type": "shell",
-            "command": "echo 'clang tidy...' && git ls-files '*.c' '*.cpp' '*.h' '*.hpp' | xargs -I {} clang-tidy -p build -fix -quiet {}",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "cd \"$(git rev-parse --show-toplevel)/Software\" && ./run_clang_tidy.sh"
+            ],
             "problemMatcher": []
         },
         {

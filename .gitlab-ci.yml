@@ -4,10 +4,18 @@ default:
   before_script:
     - . /opt/esp/activate_idf_v6.0.sh
 
+variables:
+  TIDY_ESP_FLAGS: "--target=xtensa-esp32s3-elf -D__xtensa__ -DCONFIG_IDF_TARGET_ESP32S3"
+
 stages:
   - build
+  - clang-checks
   - test
   - deploy
+
+# Info zu Ausführung:
+# Falls Push auf main + Änderungen in Software/
+# Falls MR an main + Änderungen in Software/
 
 build-job-preact:
   stage: build
@@ -18,7 +26,12 @@ build-job-preact:
     paths:
       - Software/components/webserver/www/
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
     - if: $CI_PIPELINE_SOURCE == "web"
       when: always
 
@@ -34,7 +47,50 @@ build-job-idf:
       - Software/sdkconfig
     expire_in: 1 hour
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+
+clang-format-check:
+  stage: clang-checks
+  script:
+    - echo "Checking formating rules"
+    - cd "$CI_PROJECT_DIR/Software"
+    - git ls-files '*.c' '*.cpp' '*.h' '*.hpp' | xargs clang-format --dry-run --Werror
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+
+# Wir müssen die toolchain zu clang ändern für eine funktionierende build_commands.json
+# Um systemheader zu ignoriern muss mit sed alle -I/system.. header durch -isystem/system.. umbenannt werden
+# Am Ende werden warnings.txt durchsucht um bei Fehlern die Pipeline abzubrschen - clang-tidy lieft exit 0 auch 
+# bei fehlern in checks
+clang-tidy-check:
+  stage: clang-checks
+  variables:
+    IDF_TOOLCHAIN: "clang"
+  script:
+    - echo "Running clang-tidy"
+    - cd "$CI_PROJECT_DIR/Software"
+    - ./run_clang_tidy.sh
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
     - if: $CI_PIPELINE_SOURCE == "web"
       when: always
 
@@ -44,7 +100,12 @@ test-on-esp:
     - echo "Run pytests for Hardware tests"
     - cd "$CI_PROJECT_DIR/Software" && /usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'pytest pytest/*.py --embedded-services esp,idf --target esp32s3 --app-path .'
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push" # TODO: muss man sich überlegen ob bei jedem push usb besetzt werden soll
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
     - if: $CI_PIPELINE_SOURCE == "web"
       when: always
   timeout: 2m # spätestens nach 2 Minuten usb port wieder freigeben!
@@ -54,14 +115,26 @@ test-2:
   script:
     - echo "Tests without need to connect to USB"
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+      
 deploy-prod:
   stage: deploy
   script:
     - echo "Deploy..."
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - Software/**/*
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      changes:
+        - Software/**/*
     - if: $CI_PIPELINE_SOURCE == "web"
       when: always
 #  environment: production

@@ -5,8 +5,9 @@
 #include <esp_log.h>
 #include <esp_wifi.h>
 
-static const char *TAG = "webserver";
+static constexpr const char *kTag = "webserver";
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 httpd_handle_t g_webserver = nullptr;
 
 /**
@@ -23,17 +24,18 @@ httpd_handle_t g_webserver = nullptr;
  *
  * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
  */
-esp_err_t start_webserver(void) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+esp_err_t start_webserver() {
 	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
 	// Allows wild card matching for routes
 	config.uri_match_fn = httpd_uri_match_wildcard;
 
-	ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+	ESP_LOGI(kTag, "Starting server on port: '%d'", config.server_port);
 
-	ESP_RETURN_ON_ERROR(httpd_start(&g_webserver, &config), TAG, "Failed to start http server");
+	ESP_RETURN_ON_ERROR(httpd_start(&g_webserver, &config), kTag, "Failed to start http server");
 
-	ESP_RETURN_ON_ERROR(register_routes(g_webserver), TAG, "Failed to register routes");
+	ESP_RETURN_ON_ERROR(register_routes(g_webserver), kTag, "Failed to register routes");
 
 	return ESP_OK;
 }
@@ -48,15 +50,16 @@ esp_err_t start_webserver(void) {
  *
  * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
  */
-esp_err_t stop_webserver(void) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+esp_err_t stop_webserver() {
 	// There is no running webserver instance
 	if (g_webserver == nullptr) {
 		return ESP_OK;
 	}
 
-	ESP_LOGI(TAG, "Stopping webserver...");
+	ESP_LOGI(kTag, "Stopping webserver...");
 
-	ESP_RETURN_ON_ERROR(httpd_stop(g_webserver), TAG, "Failed to stop http server");
+	ESP_RETURN_ON_ERROR(httpd_stop(g_webserver), kTag, "Failed to stop http server");
 	g_webserver = nullptr;
 	return ESP_OK;
 }
@@ -77,10 +80,10 @@ esp_err_t stop_webserver(void) {
  */
 static void connect_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
 	if (start_webserver() != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to start webserver");
+		ESP_LOGE(kTag, "Failed to start webserver");
 	} else {
-		ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-		ESP_LOGI(TAG, "Webserver available at: http://" IPSTR, IP2STR(&event->ip_info.ip));
+		auto *event = static_cast<ip_event_got_ip_t *>(event_data);
+		ESP_LOGI(kTag, "Webserver available at: http://" IPSTR, IP2STR(&event->ip_info.ip));
 	}
 }
 
@@ -102,21 +105,22 @@ static void disconnect_handler(void *arg, esp_event_base_t event_base, int32_t e
 	ESP_ERROR_CHECK_WITHOUT_ABORT(stop_webserver());
 }
 
-esp_err_t init_webserver(void) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+esp_err_t init_webserver() {
 	esp_err_t ret = ESP_ERR_INVALID_STATE;
-	ESP_LOGI(TAG, "Initialize webserver...");
+	ESP_LOGI(kTag, "Initialize webserver...");
 
 #if CONFIG_LISTEN_ETHERNET
 	ret = ESP_OK;
-	ESP_LOGI(TAG, "Webserver listening to ethernet connection...");
-	ESP_LOGW(TAG, "Ethernet is not implemented yet.");
+	ESP_LOGI(kTag, "Webserver listening to ethernet connection...");
+	ESP_LOGW(kTag, "Ethernet is not implemented yet.");
 #endif
 #if CONFIG_LISTEN_WIFI
 	ret = ESP_OK;
-	ESP_LOGI(TAG, "Webserver listening to wifi connection...");
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, nullptr), TAG,
+	ESP_LOGI(kTag, "Webserver listening to wifi connection...");
+	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, nullptr), kTag,
 						"Failed to register WiFi connect handler");
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, nullptr), TAG,
+	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, nullptr), kTag,
 						"Failed to register WiFi disconnect handler");
 #endif
 

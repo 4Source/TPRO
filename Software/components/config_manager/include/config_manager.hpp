@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-
 struct ConfigManager {
 	ConfigType config;
 	std::unordered_map<std::string, std::vector<ConfigObserver *>> observerlist;
@@ -20,7 +19,7 @@ struct ConfigManager {
 	bool remove_observer(const std::string &key, const ConfigObserver &observer);
 
 	//(GET)
-	auto get_config(const std::string &key);
+	auto get_config(const std::string &key) const;
 
 	//(PUT)
 	void set_config(const std::string &key, const std::string &value);
