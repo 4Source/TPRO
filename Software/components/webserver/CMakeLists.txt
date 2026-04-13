@@ -1,11 +1,14 @@
 # Set source files and include directories
 set(srcs 
         webserver.cpp
+        websocket_server.cpp
         routes.cpp)
 set(include_dirs include)
 set(requires 
         esp_http_server
-        network)
+        task_handles
+        network
+        led)
 set(embed)
 
 # Add webpage files to embedded files

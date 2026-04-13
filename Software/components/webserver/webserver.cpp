@@ -1,68 +1,18 @@
 #include "webserver.hpp"
 #include "routes.hpp"
+#include <cstring>
 #include <esp_check.h>
 #include <esp_eth.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 
-static constexpr const char *kTag = "webserver";
+static constexpr const char *kTagWebServer = "webserver";
+
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+static std::function<void(httpd_handle_t)> g_state_callback;
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 httpd_handle_t g_webserver = nullptr;
-
-/**
- * Starts the webserver and registers the routes.
- *
- * @retval - `ESP_OK`: Succeed
- * @retval - `ESP_ERR_INVALID_ARG`: Null argument(s)
- * @retval - `ESP_ERR_HTTPD_ALLOC_MEM`: Failed to allocate memory for instance
- * @retval - `ESP_ERR_HTTPD_TASK`: Failed to launch server task
- * @retval - `ESP_ERR_HTTPD_HANDLERS_FULL`: No slots left for new handler
- * @retval - `ESP_ERR_HTTPD_HANDLER_EXISTS`: Handler with same URI and method already registered
- *
- * For more details, see:
- *
- * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
- */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-esp_err_t start_webserver() {
-	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-	// Allows wild card matching for routes
-	config.uri_match_fn = httpd_uri_match_wildcard;
-
-	ESP_LOGI(kTag, "Starting server on port: '%d'", config.server_port);
-
-	ESP_RETURN_ON_ERROR(httpd_start(&g_webserver, &config), kTag, "Failed to start http server");
-
-	ESP_RETURN_ON_ERROR(register_routes(g_webserver), kTag, "Failed to register routes");
-
-	return ESP_OK;
-}
-
-/**
- * Stops the webserver
- *
- * @retval - `ESP_OK`: Succeed
- * @retval - `ESP_ERR_INVALID_ARG`: Handle argument is Null
- *
- * For more details, see:
- *
- * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
- */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-esp_err_t stop_webserver() {
-	// There is no running webserver instance
-	if (g_webserver == nullptr) {
-		return ESP_OK;
-	}
-
-	ESP_LOGI(kTag, "Stopping webserver...");
-
-	ESP_RETURN_ON_ERROR(httpd_stop(g_webserver), kTag, "Failed to stop http server");
-	g_webserver = nullptr;
-	return ESP_OK;
-}
 
 /**
  * Event handler for got IP events. When a got IP event is received this handler will start the webserver
@@ -78,12 +28,17 @@ esp_err_t stop_webserver() {
  *
  * - [ESP-IDF Event Loop Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/system/esp_event.html)
  */
-static void connect_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-	if (start_webserver() != ESP_OK) {
-		ESP_LOGE(kTag, "Failed to start webserver");
-	} else {
-		auto *event = static_cast<ip_event_got_ip_t *>(event_data);
-		ESP_LOGI(kTag, "Webserver available at: http://" IPSTR, IP2STR(&event->ip_info.ip));
+static void connect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
+	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+	config.uri_match_fn = httpd_uri_match_wildcard;
+
+	if (httpd_start(&g_webserver, &config) == ESP_OK) {
+		ESP_LOGI(kTagWebServer, "Server started");
+		register_routes(g_webserver);
+
+		if (g_state_callback) {
+			g_state_callback(g_webserver);
+		}
 	}
 }
 
@@ -101,28 +56,31 @@ static void connect_handler(void *arg, esp_event_base_t event_base, int32_t even
  *
  * - [ESP-IDF Event Loop Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/system/esp_event.html)
  */
-static void disconnect_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-	ESP_ERROR_CHECK_WITHOUT_ABORT(stop_webserver());
+
+static void disconnect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
+	ESP_LOGI(kTagWebServer, "Server stopping...");
+
+	// Melldung
+	if (g_state_callback) {
+		g_state_callback(nullptr);
+	}
+
+	if (g_webserver != nullptr) {
+		httpd_stop(g_webserver);
+		g_webserver = nullptr;
+	}
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-esp_err_t init_webserver() {
-	esp_err_t ret = ESP_ERR_INVALID_STATE;
-	ESP_LOGI(kTag, "Initialize webserver...");
+esp_err_t init_webserver(const std::function<void(httpd_handle_t)> &callback) {
+	ESP_LOGI(kTagWebServer, "Initializing webserver events...");
+	g_state_callback = callback;
 
-#if CONFIG_LISTEN_ETHERNET
-	ret = ESP_OK;
-	ESP_LOGI(kTag, "Webserver listening to ethernet connection...");
-	ESP_LOGW(kTag, "Ethernet is not implemented yet.");
-#endif
-#if CONFIG_LISTEN_WIFI
-	ret = ESP_OK;
-	ESP_LOGI(kTag, "Webserver listening to wifi connection...");
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, nullptr), kTag,
-						"Failed to register WiFi connect handler");
-	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, nullptr), kTag,
+	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, nullptr), kTagWebServer,
+						"Failed to register IP connect handler");
+
+	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, nullptr), kTagWebServer,
 						"Failed to register WiFi disconnect handler");
-#endif
 
-	return ret;
+	return ESP_OK;
 }

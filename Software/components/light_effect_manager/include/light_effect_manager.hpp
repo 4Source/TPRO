@@ -17,8 +17,7 @@ class TimeApi;
 // diese über eine Schnittstelle an den späteren Output Layer.
 class LightEffectManager : public ConfigObserver {
   public:
-	LightEffectManager(ConfigManager *config_manager = nullptr, TimeApi *time_api = nullptr);
-
+	LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager = nullptr, TimeApi *time_api = nullptr);
 	~LightEffectManager() = default;
 
 	// Effektverwaltung
@@ -37,6 +36,8 @@ class LightEffectManager : public ConfigObserver {
 
 	esp_err_t run();
 
+	esp_err_t start();
+
 	// Zugriff auf den letzten berechneten Frame
 	const LedFrame &get_led_data() const;
 
@@ -53,11 +54,13 @@ class LightEffectManager : public ConfigObserver {
 	float get_speed() const;
 
   private:
-	LedFrame data{};
+	LedFrame &data;
 	ConfigManager *config_manager = nullptr;
 	Effect *current_effect = nullptr;
 	float speed = 1.0f;
 	TimeApi *time_api = nullptr; // später nutzen
 
 	std::vector<Effect *> available_effects;
+
+	static void effect_task(void *arg);
 };

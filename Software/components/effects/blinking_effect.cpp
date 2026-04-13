@@ -3,14 +3,14 @@
 
 BlinkingEffect::BlinkingEffect() {
 	color_on = {
-		.r = 255,
-		.g = 255,
-		.b = 255,
+		.red = 255,
+		.green = 255,
+		.blue = 255,
 	}; // white
 	color_off = {
-		.r = 0,
-		.g = 0,
-		.b = 0,
+		.red = 0,
+		.green = 0,
+		.blue = 0,
 	}; // black
 }
 

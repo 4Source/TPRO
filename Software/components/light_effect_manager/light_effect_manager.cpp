@@ -1,10 +1,12 @@
 #include "light_effect_manager.hpp"
-
 #include "config_manager.hpp"
+#include "task_handles.hpp"
 #include <algorithm>
 #include <cstring>
+#include <freertos/task.h>
 
-LightEffectManager::LightEffectManager(ConfigManager *config_manager, TimeApi *time_api) : config_manager(config_manager), time_api(time_api) {}
+LightEffectManager::LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager, TimeApi *time_api)
+	: data(external_frame), config_manager(config_manager), time_api(time_api) {}
 
 // ============================================================
 // Effektverwaltung
@@ -90,8 +92,30 @@ esp_err_t LightEffectManager::run(const DateTime &time_stamp) {
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	// Der aktuell gesetzte Effekt erzeugt aus der Zeit einen Frame
-	data = current_effect->get_led_data(time_stamp);
+	LedFrame new_frame = current_effect->get_led_data(time_stamp);
+
+	bool frame_changed = false;
+
+	{
+		// Lock holen
+		LedFrame::ScopedWriteLock write_lock(data);
+
+		// Prüfen ob daten neu sind
+		if (data.led_data != new_frame.led_data) {
+			data = new_frame;
+			frame_changed = true;
+		}
+	}
+
+	// Tasks aufwecken nur bei Änderungen
+	if (frame_changed) {
+		if (TaskHandle::x_websocket_task_handle != nullptr) {
+			xTaskNotifyGive(TaskHandle::x_websocket_task_handle);
+		}
+		if (TaskHandle::x_led_controller_task_handle != nullptr) {
+			xTaskNotifyGive(TaskHandle::x_led_controller_task_handle);
+		}
+	}
 
 	return ESP_OK;
 }
@@ -165,3 +189,32 @@ void LightEffectManager::update(const std::vector<std::string> &keys) {
 void LightEffectManager::set_speed(float new_speed) { speed = new_speed; }
 
 float LightEffectManager::get_speed() const { return speed; }
+
+esp_err_t LightEffectManager::start() {
+	if (TaskHandle::x_light_effect_manager_task_handle != nullptr) {
+		return ESP_ERR_INVALID_STATE;
+	}
+
+	xTaskCreate(effect_task, "effect_manager", TaskHandle::kStackSizeLightEffectManager, this, TaskHandle::kPrioLightEffectManager,
+				&TaskHandle::x_light_effect_manager_task_handle);
+
+	return ESP_OK;
+}
+
+void LightEffectManager::effect_task(void *arg) {
+	auto *manager = static_cast<LightEffectManager *>(arg);
+
+	while (true) {
+		float current_speed = manager->get_speed();
+		current_speed = std::max(current_speed, 0.01F);
+		// ca. 30 FPS bei speed = 1.0f aktuell
+		auto delay_ms = static_cast<uint32_t>(33.0F / current_speed);
+
+		// TODO: Nur Übergang solange TimeApi nicht implementiert ist
+		DateTime current_time = {};
+
+		manager->run(current_time);
+
+		vTaskDelay(pdMS_TO_TICKS(delay_ms));
+	}
+}

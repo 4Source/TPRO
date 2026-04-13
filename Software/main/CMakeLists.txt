@@ -4,6 +4,7 @@ set(requires
         config_manager
         nvs_flash
         led 
+        light_effect_manager
         effects
         esp_driver_gpio
         log
