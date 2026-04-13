@@ -53,29 +53,66 @@ extern "C" void app_main(void) {
   }
 }
 */
+#include "config_manager.hpp"
+#include "light_effect_manager.hpp"
 #include "network.hpp"
 #include "webserver.hpp"
+#include "websocket_server.hpp"
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <nvs_flash.h>
+#include <optional>
+
+// TODO: Muss wirklich alles davon global sein?
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+std::optional<WebsocketServer> g_ws_server;
+static LedFrame main_frame;
+static ConfigManager main_config;
+static LightEffectManager effect_manager(main_frame, &main_config);
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+
+/**
+ * Needs to be initialized once per app. Will allow persistent storage in the flash.
+ *
+ * Needed by:
+ * - WiFi to store the configuration into flash
+ */
+static void init_nvs_storage() {
+	esp_err_t ret = nvs_flash_init();
+	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		ESP_ERROR_CHECK(nvs_flash_erase());
+		ret = nvs_flash_init();
+	}
+	ESP_ERROR_CHECK(ret);
+}
+/*
+ * This helper function configures the webserver and websocket server.
+ */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+static void handle_websocket_state(httpd_handle_t handle, LedFrame &frame) {
+	if (handle != nullptr) {
+		ESP_LOGI("MAIN", "Webserver handle received, starting WebSocket...");
+		g_ws_server.emplace(handle, frame);
+		g_ws_server->run();
+	} else {
+		ESP_LOGW("MAIN", "Webserver handle lost, stopping WebSocket...");
+		if (g_ws_server.has_value()) {
+			g_ws_server->stop();
+			g_ws_server.reset();
+		}
+	}
+}
 
 extern "C" void app_main(void) {
 	esp_err_t ret = ESP_OK;
 
 	// Only used for pytest_boot
 	ESP_LOGI("MAIN", "LED Wall startup");
-	/**
-	 * Needs to be initialized once per app. Will allow persistent storage in the flash.
-	 *
-	 * Needed by:
-	 * - WiFi to store the configuration into flash
-	 */
-	ret = nvs_flash_init();
-	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-		ESP_ERROR_CHECK(nvs_flash_erase());
-		ret = nvs_flash_init();
-	}
-	ESP_ERROR_CHECK(ret);
+
+	// Create static main led Frame
+	static LedFrame main_frame;
+
+	init_nvs_storage();
 
 	/*
 	 * Initialize TCP/IP stack
@@ -100,12 +137,7 @@ extern "C" void app_main(void) {
 	// TODO: Proper error handling, currently the application will not launch
 	ESP_ERROR_CHECK(init_network());
 
-	/*
-	 * This helper function configures the webserver.
-	 */
-	// TODO: Proper error handling, currently the application will not launch
-	ESP_ERROR_CHECK(init_webserver());
-
+	ESP_ERROR_CHECK(init_webserver([&](httpd_handle_t handle) { handle_websocket_state(handle, main_frame); }));
 	/*
 	 * This helper function starts Wi-Fi or Ethernet, as configured above.
 	 */

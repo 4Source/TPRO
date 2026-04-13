@@ -60,3 +60,7 @@ Contains the custom components for this project.
 # Hardware
 https://www.waveshare.com/esp32-s3-eth.htm?sku=28972
 https://www.waveshare.com/wiki/ESP32-S3-ETH
+
+# googletest
+Run when first repo clone
+```git submodule update --init --recursive```

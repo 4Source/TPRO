@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'preact/hooks';
+import { useState, useMemo, useEffect } from 'preact/hooks';
 import './style.css';
 import { ThinPlateSpline } from '../../tps';
 import worldmapImage from '../../assets/worldmap.svg';
@@ -39,7 +39,7 @@ export function Simulation() {
 	const totalDots = COLS * ROWS;
 
 	// --- STATES ---
-	const [matrixState /* setMatrixState*/] = useState(new Array(totalDots).fill(false));
+	const [ledColors, setLedColors] = useState<string[]>(new Array(totalDots).fill('rgb(0, 0, 0)'));
 	const [showMap, setShowMap] = useState(true);
 	const [dotsOpacity, setDotsOpacity] = useState(1);
 	const [mapOpacity, setMapOpacity] = useState(0.5);
@@ -76,6 +76,64 @@ export function Simulation() {
 		const mins = minutes % 60;
 		return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 	};
+
+	// --- WEBSOCKET LOGIK ---
+	useEffect(() => {
+		// IP/Port des C++ Servers
+		// const ip = '192.168.178.45';
+		// const ws = new WebSocket('ws://${ip}/ws');
+		// Holt sich automatisch die IP, unter der die Seite aufgerufen wurde
+		const ip = window.location.hostname;
+		const wsUrl = `ws://${ip}/ws`;
+
+		console.log('Verbinde mit WebSocket (Dynamisch) unter:', wsUrl);
+
+		const ws = new WebSocket(wsUrl);
+
+		// Bytes erwarten, nicht Text
+		ws.binaryType = 'arraybuffer';
+
+		ws.onopen = () => {
+			console.log('WebSocket verbunden!');
+		};
+
+		ws.onmessage = (event) => {
+			// Wenn Binärdaten ankommen
+			if (event.data instanceof ArrayBuffer) {
+				const view = new Uint8Array(event.data);
+
+				const newColors = new Array(totalDots);
+
+				let byteIndex = 0;
+				for (let i = 0; i < totalDots; i++) {
+					// C++ sendet Struct RGB uint8
+					const r = view[byteIndex++];
+					const g = view[byteIndex++];
+					const b = view[byteIndex++];
+
+					// CSS rgb string
+					newColors[i] = `rgb(${r}, ${g}, ${b})`;
+				}
+
+				// Update UI
+				setLedColors(newColors);
+			}
+		};
+
+		ws.onerror = (error) => {
+			console.error('WebSocket Fehler:', error);
+		};
+
+		ws.onclose = () => {
+			console.log('WebSocket getrennt.');
+		};
+
+		return () => {
+			if (ws.readyState === WebSocket.OPEN) {
+				ws.close();
+			}
+		};
+	}, [totalDots]);
 
 	/** CLICK TO COORDINATES MODE  */
 	const handleMatrixClick = (e: MouseEvent) => {
@@ -172,9 +230,9 @@ export function Simulation() {
 
 	// QGIS .points PARSER ---
 	/*
-        mapX,mapY,pixelX,pixelY,enable
-        -80.74487929,25.29191503,687.78765690,755.72698745,1
-    */
+		mapX,mapY,pixelX,pixelY,enable
+		-80.74487929,25.29191503,687.78765690,755.72698745,1
+	*/
 	const handleFileUpload = (e: Event) => {
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file) return;
@@ -461,12 +519,17 @@ export function Simulation() {
 						className={`matrix-grid ${clickToCoordinatesMode ? 'cursor-crosshair' : 'cursor-default'}`}
 						onClick={handleMatrixClick}
 					>
-						{matrixState.map((active, index) => (
+						{ledColors.map((color, index) => (
 							<div
 								key={index}
-								className={`dot ${active ? 'active' : 'inactive'}`}
+								className="dot"
 								title={`LED ${index}`}
-								style={{ opacity: dotsOpacity }}
+								style={{
+									opacity: dotsOpacity,
+
+									// Setzt die RGB-Farbe aus dem WebSocket
+									backgroundColor: color,
+								}}
 							/>
 						))}
 					</div>

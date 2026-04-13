@@ -2,6 +2,7 @@
 
 #include <esp_err.h>
 #include <esp_http_server.h>
+#include <functional>
 
 extern httpd_handle_t g_webserver;
 
@@ -21,4 +22,4 @@ extern httpd_handle_t g_webserver;
  *
  * - [ESP-IDF Ethernet Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/network/esp_eth.html)
  */
-esp_err_t init_webserver(void);
+esp_err_t init_webserver(const std::function<void(httpd_handle_t)> &state_callback);

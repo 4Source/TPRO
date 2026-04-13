@@ -6,6 +6,7 @@ default:
 
 variables:
   TIDY_ESP_FLAGS: "--target=xtensa-esp32s3-elf -D__xtensa__ -DCONFIG_IDF_TARGET_ESP32S3"
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
   - web-checks
@@ -130,10 +131,14 @@ test-on-esp:
       when: always
   timeout: 2m # spätestens nach 2 Minuten usb port wieder freigeben!
 
-test-2:
+test-without-target:
   stage: test
   script:
     - echo "Tests without need to connect to USB"
+    - cd "$CI_PROJECT_DIR/Software"
+    - mkdir -p unittest/build_unit
+    - echo "Building and running unit tests..."
+    - ./run_unit_tests.sh
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:

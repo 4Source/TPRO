@@ -28,3 +28,5 @@ pytest_logs/
 pytest/__pycache__/
 pytest_embedded_files/
 warnings.txt
+# unittests
+unittest/build_unit/
