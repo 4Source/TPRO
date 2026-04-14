@@ -1,5 +1,8 @@
 menu "Network configuration"
 
+    # Import target specific environment variables
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
     config CONNECT_WIFI
         bool "connect using WiFi interface"
         depends on (SOC_WIFI_SUPPORTED || ESP_WIFI_REMOTE_ENABLED || ESP_HOST_WIFI_ENABLED)
@@ -34,9 +37,49 @@ menu "Network configuration"
     config CONNECT_ETHERNET
         bool "connect using Ethernet interface"
         default y if !CONNECT_WIFI
+        select ETH_ENABLED
+        select ETH_USE_SPI_ETHERNET
         help
             Protocol examples can use WiFi, Ethernet and/or Thread to connect to the network.
             Choose this option to enable connection with Ethernet.
             Go to `Top -> Ethernet Configuration` to configure the Ethernet interface.
+
+    if CONNECT_ETHERNET
+        config ETHERNET_SPI_MISO_GPIO
+            int "Ethernet SPI MISO GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 12
+
+        config ETHERNET_SPI_MOSI_GPIO
+            int "Ethernet SPI MOSI GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 11
+
+        config ETHERNET_SPI_SCLK_GPIO
+            int "Ethernet SPI SCLK GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 13
+
+        config ETHERNET_SPI_CS_GPIO
+            int "Ethernet SPI CS GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 14
+
+        config ETHERNET_SPI_HOST
+            int "Ethernet SPI Host"
+            range 1 3
+            default 2
+
+        config ETHERNET_RST_GPIO
+            int "Ethernet reset GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 9
+
+        config ETHERNET_INT_GPIO
+            int "Ethernet interrupt GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 10
+
+    endif
 
 endmenu

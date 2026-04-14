@@ -3,6 +3,8 @@ set(srcs
         network.cpp)
 set(include_dirs include)
 set(requires 
+        esp_driver_gpio
+        esp_driver_spi
         esp_netif 
         esp_wifi 
         esp_eth)
@@ -11,6 +13,7 @@ message(STATUS "Configure network component: ")
 
 if(CONFIG_CONNECT_ETHERNET)
     message(STATUS "\tEthernet is enabled")
+    list(APPEND srcs ethernet_network.cpp)
 endif()
 
 if(CONFIG_CONNECT_WIFI)
@@ -18,6 +21,15 @@ if(CONFIG_CONNECT_WIFI)
     message(STATUS "\tWifi SSID: ${CONFIG_WIFI_SSID}")
     message(STATUS "\tWifi PW: ${CONFIG_WIFI_PASSWORD}")
 
+    if("${CONFIG_WIFI_SSID}" STREQUAL "myssid") 
+        message(WARNING "Your config contains default ssid for wifi!")
+    endif()
+
+    if("${CONFIG_WIFI_PASSWORD}" STREQUAL "mypassword")
+        message(WARNING "Your config contains default password for wifi!")
+    endif()
+
+    list(APPEND srcs wifi_network.cpp)
 endif()
 
 # Register the component

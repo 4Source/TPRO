@@ -1,58 +1,3 @@
-/* LED Strip Example
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "led_strip.h"
-
-#define STRIP_GPIO_PIN GPIO_NUM_15
-#define STRIP_LED_COUNT 1
-#define BLINK_DELAY_MS 500
-
-static const char *TAG = "LED_BASE";
-static led_strip_handle_t led_strip;
-
-static void configure_led(void) {
-  // Setup strip with RMT
-  // Info: Alles explizit angeben wegen -Werror=missing-field-initializers
-  led_strip_config_t strip_config = {.strip_gpio_num = 18,
-									 .max_leds = 60,
-									 .led_model = LED_MODEL_WS2812,
-									 .color_component_format =
-										 LED_STRIP_COLOR_COMPONENT_FMT_GRB,
-									 .flags = {
-										 .invert_out = false,
-									 }};
-
-  led_strip_rmt_config_t rmt_config = {.clk_src = RMT_CLK_SRC_DEFAULT,
-									   .resolution_hz = 10 * 1000 * 1000,
-									   .mem_block_symbols = 64,
-									   .flags = {
-										   .with_dma = false,
-									   }};
-  ESP_ERROR_CHECK(
-	  led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-}
-extern "C" void app_main(void) {
-
-  bool state = false;
-  configure_led();
-  while (1) {
-	if (state) {
-	  // LED 0 auf weiß
-	  led_strip_set_pixel(led_strip, 0, 255, 255, 255);
-	  led_strip_refresh(led_strip);
-	} else {
-	  led_strip_clear(led_strip);
-	}
-
-	ESP_LOGI(TAG, "LED %s", state ? "ON" : "OFF");
-	state = !state;
-
-	vTaskDelay(pdMS_TO_TICKS(BLINK_DELAY_MS));
-  }
-}
-*/
 #include "config_manager.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
@@ -77,6 +22,7 @@ static LightEffectManager effect_manager(main_frame, &main_config);
  *
  * Needed by:
  * - WiFi to store the configuration into flash
+ * - Ethernet to store the configuration into flash
  */
 static void init_nvs_storage() {
 	esp_err_t ret = nvs_flash_init();
@@ -86,10 +32,10 @@ static void init_nvs_storage() {
 	}
 	ESP_ERROR_CHECK(ret);
 }
+
 /*
  * This helper function configures the webserver and websocket server.
  */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void handle_websocket_state(httpd_handle_t handle, LedFrame &frame) {
 	if (handle != nullptr) {
 		ESP_LOGI("MAIN", "Webserver handle received, starting WebSocket...");
@@ -105,10 +51,8 @@ static void handle_websocket_state(httpd_handle_t handle, LedFrame &frame) {
 }
 
 extern "C" void app_main(void) {
-	esp_err_t ret = ESP_OK;
-
 	// Only used for pytest_boot
-	ESP_LOGI("MAIN", "LED Wall startup");
+	ESP_LOGI("main", "LED Wall startup");
 
 	// Create static main led Frame
 	static LedFrame main_frame;
@@ -120,6 +64,7 @@ extern "C" void app_main(void) {
 	 *
 	 * Needed by:
 	 * - WiFi
+	 * - Ethernet
 	 */
 	ESP_ERROR_CHECK(esp_netif_init());
 
@@ -128,22 +73,26 @@ extern "C" void app_main(void) {
 	 *
 	 * Needed by:
 	 * - WiFi
+	 * - Ethernet
 	 */
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
-	esp_netif_create_default_wifi_sta();
 
 	/*
 	 * This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
 	 */
 	// TODO: Proper error handling, currently the application will not launch
-	ESP_ERROR_CHECK(init_network());
+	ESP_ERROR_CHECK(Network::init());
 
+	/**
+	 * This helper function starts the webserver
+	 */
 	ESP_ERROR_CHECK(init_webserver([&](httpd_handle_t handle) { handle_websocket_state(handle, main_frame); }));
+
 	/*
 	 * This helper function starts Wi-Fi or Ethernet, as configured above.
 	 */
 	// TODO: Proper error handling, currently the application will not launch
-	ESP_ERROR_CHECK(connect_network());
+	ESP_ERROR_CHECK(Network::connect());
 
 	init_timeserver();
 

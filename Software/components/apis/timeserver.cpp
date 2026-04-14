@@ -25,7 +25,7 @@ void time_received(struct timeval *timeval) {
 
 	ESP_LOGI(kTag, "Time synchronized successfully %s", get_current_time_str().c_str());
 }
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+
 void init_timeserver() {
 	auto servers = std::span{kGListOfTimeservers};
 	ESP_LOGI(kTag, "Initializing timeserver");

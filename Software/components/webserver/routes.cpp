@@ -30,7 +30,6 @@ struct embed_file_data {
  * - [ESP-IDF Embedding Binary
  * Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-guides/build-system.html#embedding-binary-data)
  */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static esp_err_t embedded_file_get_handler(httpd_req_t *req) {
 	auto *file_data = static_cast<embed_file_data *>(req->user_ctx);
 

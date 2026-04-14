@@ -66,6 +66,13 @@ CheckOptions:
   - key:            readability-function-cognitive-complexity.Threshold
     value:          '50' # Erhöhe Complexität auf 50 - default waren 25
 
+  # Ignores Macros like from esp-idf or self defined in cognitive complexity calculation
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
+
+  - key: cppcoreguidelines-avoid-do-while.IgnoreMacros
+    value: true
+
   - key:            readability-identifier-naming.GlobalConstantPrefix
     value:          k
   - key:            readability-identifier-naming.GlobalConstantCase
@@ -78,5 +85,6 @@ CheckOptions:
     value:          k
   - key:            readability-identifier-naming.ConstexprVariableCase
     value:          CamelCase
+
 # Warnungen als Fehler ausgeben für CI
 WarningsAsErrors: '*'
