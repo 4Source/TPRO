@@ -10,7 +10,6 @@ static constexpr const char *kTagWebSocketServer = "websocket_server";
 
 WebsocketServer::WebsocketServer(httpd_handle_t server, LedFrame &frame) : m_server(server), r_frame(frame) {}
 
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 esp_err_t WebsocketServer::run() {
 	if (m_server == nullptr) {
 		return ESP_ERR_INVALID_STATE;
