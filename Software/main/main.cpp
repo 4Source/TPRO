@@ -56,6 +56,7 @@ extern "C" void app_main(void) {
 #include "config_manager.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
+#include "timeserver.hpp"
 #include "webserver.hpp"
 #include "websocket_server.hpp"
 #include <esp_log.h>
@@ -143,6 +144,8 @@ extern "C" void app_main(void) {
 	 */
 	// TODO: Proper error handling, currently the application will not launch
 	ESP_ERROR_CHECK(connect_network());
+
+	init_timeserver();
 
 	while (true) {
 		// Delay to simulate load

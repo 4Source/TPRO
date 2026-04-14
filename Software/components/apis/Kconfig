@@ -1,0 +1,17 @@
+menu "Timeserver"
+
+    config POLLING_INTERVAL
+        int "Polling interval (ms)"
+        default 360000
+        help
+            The interval in ms how often the timeserver should be asked for a new time.
+
+    config TIMEZONE
+        string "Timezone"
+        default "CET-1CEST,M3.5.0,M10.5.0/3"
+        help
+            Default corresponds to: Europe/Berlin
+            The GMT0 timezone string for the timezone. 
+            A list could be found here https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+
+endmenu
