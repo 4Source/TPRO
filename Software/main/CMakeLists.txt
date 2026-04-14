@@ -8,7 +8,8 @@ set(requires
         effects
         esp_driver_gpio
         log
-        driver)
+        driver
+        apis)
 
 idf_component_register(SRCS "main.cpp"
                        INCLUDE_DIRS "."
