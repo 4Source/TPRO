@@ -3,6 +3,7 @@
 #include <cstring>
 #include <esp_check.h>
 #include <esp_log.h>
+#include <mdns.h>
 #include <string>
 
 // This is for clang tidy when not configured the files still get analyzed and than have missing defines
@@ -144,6 +145,9 @@ void WifiNetwork::handle_got_ip(ip_event_got_ip_t *event) {
 	ESP_LOGI(kTag, "WiFi successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 	s_retry_num = 0;
 	xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+	mdns_init();
+	mdns_hostname_set("lightwall");
+	mdns_service_add("lightwall", "_http", "_tcp", 80, nullptr, 0);
 }
 
 void WifiNetwork::handle_lost_ip() { ESP_LOGW(kTag, "WiFi lost IPv4 address"); }

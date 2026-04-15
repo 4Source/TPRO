@@ -6,3 +6,4 @@ dependencies:
     version: '>=6.0'
   ## List of dependencies 
   espressif/w5500: ^1.0.1
+  espressif/mdns: '*'
