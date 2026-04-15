@@ -7,7 +7,8 @@ set(srcs
 set(include_dirs include) #effects.hpp
 set(requires 
         espressif__json_parser 
-        led)
+        led
+        time)
 
 message(STATUS "Configure effects component: ")
 

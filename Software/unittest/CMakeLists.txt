@@ -10,6 +10,7 @@ enable_testing()
 add_subdirectory(${CMAKE_SOURCE_DIR}/../external/googletest "${CMAKE_BINARY_DIR}/googletest_build")
 
 # Unterordner hinzufügen
+add_subdirectory(datetime)
 add_subdirectory(light_effect_manager)
 add_subdirectory(websocket)
 add_subdirectory(effect_factory)

@@ -15,7 +15,7 @@ class TimelineEffect : public Effect {
   public:
 	TimelineEffect() : _path(""), _path_buffer() {}
 	~TimelineEffect() override = default;
-	LedFrame get_led_data(DateTime time) override;
+	std::unique_ptr<LedFrame> get_led_data(DateTime time) override;
 
 	esp_err_t serialize(const char *path) override;
 	esp_err_t deserialize(const char *path) override;

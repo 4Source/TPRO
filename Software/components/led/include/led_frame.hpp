@@ -37,6 +37,11 @@ class LedFrame {
 			vSemaphoreDelete(m_reader_mutex);
 		}
 	}
+	// Nur explizit kopieren erlaubt
+	LedFrame(const LedFrame &) = delete;
+	LedFrame &operator=(const LedFrame &) = delete;
+	void copy_data_from(const LedFrame &other) { this->led_data = other.led_data; }
+
 	/// @brief Scoped Lock für schreiben
 	struct ScopedWriteLock {
 		LedFrame &frame;

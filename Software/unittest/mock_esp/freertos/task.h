@@ -6,6 +6,8 @@ typedef uint32_t StackType_t;
 typedef uint32_t TickType_t;
 typedef long BaseType_t;
 
+#include "esp_additions/freertos_tasks_c_additions.h"
+
 #define pdTRUE (1L)
 #define pdFALSE (0L)
 #define pdPASS (1L)

@@ -135,6 +135,64 @@ export function Simulation() {
 		};
 	}, [totalDots]);
 
+	// --- WEBSOCKET LOGIK ---
+	useEffect(() => {
+		// IP/Port des C++ Servers
+		// const ip = '192.168.178.45';
+		// const ws = new WebSocket('ws://${ip}/ws');
+		// Holt sich automatisch die IP, unter der die Seite aufgerufen wurde
+		const ip = window.location.hostname;
+		const wsUrl = `ws://${ip}/ws`;
+
+		console.log('Verbinde mit WebSocket (Dynamisch) unter:', wsUrl);
+
+		const ws = new WebSocket(wsUrl);
+
+		// Bytes erwarten, nicht Text
+		ws.binaryType = 'arraybuffer';
+
+		ws.onopen = () => {
+			console.log('WebSocket verbunden!');
+		};
+
+		ws.onmessage = (event) => {
+			// Wenn Binärdaten ankommen
+			if (event.data instanceof ArrayBuffer) {
+				const view = new Uint8Array(event.data);
+
+				const newColors = new Array(totalDots);
+
+				let byteIndex = 0;
+				for (let i = 0; i < totalDots; i++) {
+					// C++ sendet Struct RGB uint8
+					const r = view[byteIndex++];
+					const g = view[byteIndex++];
+					const b = view[byteIndex++];
+
+					// CSS rgb string
+					newColors[i] = `rgb(${r}, ${g}, ${b})`;
+				}
+
+				// Update UI
+				setLedColors(newColors);
+			}
+		};
+
+		ws.onerror = (error) => {
+			console.error('WebSocket Fehler:', error);
+		};
+
+		ws.onclose = () => {
+			console.log('WebSocket getrennt.');
+		};
+
+		return () => {
+			if (ws.readyState === WebSocket.OPEN) {
+				ws.close();
+			}
+		};
+	}, [totalDots]);
+
 	/** CLICK TO COORDINATES MODE  */
 	const handleMatrixClick = (e: MouseEvent) => {
 		if (!clickToCoordinatesMode || !tps || isDragging) return;

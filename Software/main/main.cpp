@@ -1,3 +1,4 @@
+#include "blinking_effect.hpp"
 #include "config_manager.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
@@ -14,7 +15,7 @@
 std::optional<WebsocketServer> g_ws_server;
 static LedFrame main_frame;
 static ConfigManager main_config;
-static LightEffectManager effect_manager(main_frame, &main_config);
+static LightEffectManager effect_manager(main_frame /*, &main_config*/);
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /**
@@ -36,10 +37,10 @@ static void init_nvs_storage() {
 /*
  * This helper function configures the webserver and websocket server.
  */
-static void handle_websocket_state(httpd_handle_t handle, LedFrame &frame) {
+static void handle_websocket_state(httpd_handle_t handle) {
 	if (handle != nullptr) {
 		ESP_LOGI("MAIN", "Webserver handle received, starting WebSocket...");
-		g_ws_server.emplace(handle, frame);
+		g_ws_server.emplace(handle, main_frame);
 		g_ws_server->run();
 	} else {
 		ESP_LOGW("MAIN", "Webserver handle lost, stopping WebSocket...");
@@ -83,7 +84,7 @@ extern "C" void app_main(void) {
 	/**
 	 * This helper function starts the webserver
 	 */
-	ESP_ERROR_CHECK(init_webserver([&](httpd_handle_t handle) { handle_websocket_state(handle, main_frame); }));
+	ESP_ERROR_CHECK(init_webserver([&](httpd_handle_t handle) { handle_websocket_state(handle); }));
 
 	/*
 	 * This helper function starts Wi-Fi or Ethernet, as configured above.
@@ -92,6 +93,12 @@ extern "C" void app_main(void) {
 	ESP_ERROR_CHECK(Network::connect());
 
 	init_timeserver();
+
+	// Test Blink
+	BlinkingEffect blink;
+	effect_manager.register_effect(&blink);
+	effect_manager.set_effect(&blink);
+	effect_manager.start();
 
 	while (true) {
 		// Delay to simulate load

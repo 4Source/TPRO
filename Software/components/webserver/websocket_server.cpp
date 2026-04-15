@@ -15,16 +15,6 @@ esp_err_t WebsocketServer::run() {
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	// 1. WebSocket URI registrieren
-	httpd_uri_t ws_uri = {};
-	ws_uri.uri = "/ws";
-	ws_uri.method = HTTP_GET;
-	ws_uri.handler = ws_handler;
-	ws_uri.user_ctx = this; // Instanz als context
-	ws_uri.is_websocket = true;
-
-	ESP_RETURN_ON_ERROR(httpd_register_uri_handler(m_server, &ws_uri), kTagWebSocketServer, "Failed to register WebSocket URI");
-
 	// Task starten
 	BaseType_t task_ret = xTaskCreate(ws_broadcast_task, "ws_broadcast_task", TaskHandle::kStackSizeWebSocket, this,
 									  TaskHandle::kPrioWebsocket, // Priorität

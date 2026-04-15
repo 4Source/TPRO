@@ -1,8 +1,8 @@
 #include "timeline_effect.hpp"
 
-LedFrame TimelineEffect::get_led_data(DateTime time) {
+std::unique_ptr<LedFrame> TimelineEffect::get_led_data(DateTime time) {
 	if (_steps.empty()) {
-		return LedFrame{};
+		return std::make_unique<LedFrame>();
 	}
 
 	// Gesamt Dauer - wsh besser wenn von deserialize gesetzt wird

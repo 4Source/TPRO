@@ -14,14 +14,14 @@ BlinkingEffect::BlinkingEffect() {
 	}; // black
 }
 
-LedFrame BlinkingEffect::get_led_data(DateTime time_stamp) {
-	LedFrame frame;
+std::unique_ptr<LedFrame> BlinkingEffect::get_led_data(DateTime time_stamp) {
+	auto frame = std::make_unique<LedFrame>();
 
 	// Implements a simple blinking logic: 1 second ON, 1 second OFF
 	bool is_on = (time_stamp.second % 2) == 0;
 	RGB current_color = is_on ? color_on : color_off;
 
-	for (auto &led_row : frame.led_data) {
+	for (auto &led_row : frame->led_data) {
 		for (auto &led_pos : led_row) {
 			led_pos = current_color;
 		}
