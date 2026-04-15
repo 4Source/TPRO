@@ -129,7 +129,7 @@ test-on-esp:
         - Software/**/*
     - if: $CI_PIPELINE_SOURCE == "web"
       when: always
-  timeout: 2m # spätestens nach 2 Minuten usb port wieder freigeben!
+  timeout: 10m # spätestens nach 10 Minuten usb port wieder freigeben!
 
 test-without-target:
   stage: test

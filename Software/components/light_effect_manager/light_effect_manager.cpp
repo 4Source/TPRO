@@ -35,12 +35,12 @@ esp_err_t LightEffectManager::set_effect(const char *path) {
 			continue;
 		}
 
-		const char *effect_path = effect->get_filepath();
-		if (effect_path == nullptr) {
+		const std::string effect_path = effect->get_filepath();
+		if (effect_path.empty()) {
 			continue;
 		}
 
-		if (std::strcmp(effect_path, path) == 0) {
+		if (std::strcmp(effect_path.c_str(), path) == 0) {
 			current_effect = effect;
 			return ESP_OK;
 		}
