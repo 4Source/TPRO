@@ -12,3 +12,4 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../external/googletest "${CMAKE_BINARY_DIR}
 # Unterordner hinzufügen
 add_subdirectory(light_effect_manager)
 add_subdirectory(websocket)
+add_subdirectory(effect_factory)

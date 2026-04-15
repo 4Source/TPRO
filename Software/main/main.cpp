@@ -54,9 +54,6 @@ extern "C" void app_main(void) {
 	// Only used for pytest_boot
 	ESP_LOGI("main", "LED Wall startup");
 
-	// Create static main led Frame
-	static LedFrame main_frame;
-
 	init_nvs_storage();
 
 	/*

@@ -30,32 +30,27 @@ LedFrame BlinkingEffect::get_led_data(DateTime time_stamp) {
 	return frame;
 }
 
-esp_err_t BlinkingEffect::serialize() {
+esp_err_t BlinkingEffect::serialize(const char *path) {
 	// Not implemented for this simple test effect
 	return ESP_OK;
 }
 
-esp_err_t BlinkingEffect::deserialize(const char *json_text) {
+esp_err_t BlinkingEffect::deserialize(const char *path) {
 	// Not implemented for this simple test effect
 	return ESP_OK;
-}
-
-std::vector<Effect *> &BlinkingEffect::get_subeffects() { return subeffects; }
-
-esp_err_t BlinkingEffect::set_subeffect(Effect *effect) {
-	if (effect != nullptr) {
-		subeffects.push_back(effect);
-		return ESP_OK;
-	}
-	return ESP_ERR_INVALID_ARG;
 }
 
 esp_err_t BlinkingEffect::set_filepath(const char *path) {
 	if (path != nullptr) {
-		filepath = path;
+		_path = const_cast<char *>(path);
 		return ESP_OK;
 	}
 	return ESP_ERR_INVALID_ARG;
 }
 
-const char *BlinkingEffect::get_filepath() { return filepath.c_str(); }
+const std::string BlinkingEffect::get_filepath() { return _path; }
+
+esp_err_t BlinkingEffect::set_parameter(const char *name, const char *value) {
+	// Not implemented for this simple test effect
+	return ESP_OK;
+}

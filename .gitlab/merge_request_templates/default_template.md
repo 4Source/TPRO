@@ -14,3 +14,4 @@ Fixes # <!-- Issue number --->
 ## Checklist before merging
 - [ ] Code follows the style guidelines
 - [ ] Documentation and Comments are updated
+- [ ] Code is integrated into system
