@@ -1,8 +1,10 @@
 #include "light_effect_manager.hpp"
 #include "config_manager.hpp"
+#include "datetime.hpp"
 #include "task_handles.hpp"
 #include <algorithm>
 #include <cstring>
+#include <esp_err.h>
 #include <freertos/task.h>
 
 LightEffectManager::LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager, TimeApi *time_api)
@@ -92,17 +94,19 @@ esp_err_t LightEffectManager::run(const DateTime &time_stamp) {
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	LedFrame new_frame = current_effect->get_led_data(time_stamp);
+	std::unique_ptr<LedFrame> new_frame = current_effect->get_led_data(time_stamp);
+
+	if (!new_frame) {
+		return ESP_ERR_NO_MEM;
+	}
 
 	bool frame_changed = false;
-
 	{
-		// Lock holen
 		LedFrame::ScopedWriteLock write_lock(data);
 
-		// Prüfen ob daten neu sind
-		if (data.led_data != new_frame.led_data) {
-			data = new_frame;
+		// LED-Daten vergleichen und kopieren
+		if (data.led_data != new_frame->led_data) {
+			data.copy_data_from(*new_frame);
 			frame_changed = true;
 		}
 	}
@@ -149,8 +153,6 @@ esp_err_t LightEffectManager::run() { // NOLINT(readability-convert-member-funct
 	return ESP_ERR_NOT_SUPPORTED;
 }
 
-const LedFrame &LightEffectManager::get_led_data() const { return data; }
-
 // ============================================================
 // System-Anbindung & Konfiguration
 // ============================================================
@@ -195,8 +197,8 @@ esp_err_t LightEffectManager::start() {
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	xTaskCreate(effect_task, "effect_manager", TaskHandle::kStackSizeLightEffectManager, this, TaskHandle::kPrioLightEffectManager,
-				&TaskHandle::x_light_effect_manager_task_handle);
+	xTaskCreatePinnedToCore(effect_task, "effect_manager", TaskHandle::kStackSizeLightEffectManager, this, TaskHandle::kPrioLightEffectManager,
+							&TaskHandle::x_light_effect_manager_task_handle, TaskHandle::kStackCoreLightEffectManager);
 
 	return ESP_OK;
 }
@@ -208,11 +210,9 @@ void LightEffectManager::effect_task(void *arg) {
 		float current_speed = manager->get_speed();
 		current_speed = std::max(current_speed, 0.01F);
 		// ca. 30 FPS bei speed = 1.0f aktuell
-		auto delay_ms = static_cast<uint32_t>(33.0F / current_speed);
+		auto delay_ms = static_cast<uint32_t>(330.0F / current_speed);
 
-		// TODO: Nur Übergang solange TimeApi nicht implementiert ist
-		DateTime current_time = {};
-
+		DateTime current_time{};
 		manager->run(current_time);
 
 		vTaskDelay(pdMS_TO_TICKS(delay_ms));

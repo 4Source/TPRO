@@ -8,7 +8,7 @@ class BlinkingEffect : public Effect {
 	BlinkingEffect();
 	~BlinkingEffect() override = default;
 
-	LedFrame get_led_data(DateTime time_stamp) override;
+	std::unique_ptr<LedFrame> get_led_data(DateTime time_stamp) override;
 
 	esp_err_t serialize(const char *path) override;
 	esp_err_t deserialize(const char *path) override;

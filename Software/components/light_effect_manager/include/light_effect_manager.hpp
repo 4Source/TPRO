@@ -38,9 +38,6 @@ class LightEffectManager : public ConfigObserver {
 
 	esp_err_t start();
 
-	// Zugriff auf den letzten berechneten Frame
-	const LedFrame &get_led_data() const;
-
 	// System-Anbindung & Konfiguration
 	void set_config_manager(ConfigManager *config_manager);
 	void set_time_api(TimeApi *time_api);
@@ -54,6 +51,7 @@ class LightEffectManager : public ConfigObserver {
 	float get_speed() const;
 
   private:
+	static constexpr const char *kTag = "light-effect-manager";
 	LedFrame &data;
 	ConfigManager *config_manager = nullptr;
 	Effect *current_effect = nullptr;

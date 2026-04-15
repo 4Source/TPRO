@@ -19,6 +19,9 @@ class WebsocketServer {
 	esp_err_t run();
 	esp_err_t stop();
 
+	// ESP-IDF HTTP Handler für den WebSocket
+	static esp_err_t ws_handler(httpd_req_t *req);
+
 #ifdef UNIT_TEST
   public:
 #else
@@ -34,7 +37,4 @@ class WebsocketServer {
 
 	// FreeRTOS Task-Funktion
 	static void ws_broadcast_task(void *arg);
-
-	// ESP-IDF HTTP Handler für den WebSocket
-	static esp_err_t ws_handler(httpd_req_t *req);
 };

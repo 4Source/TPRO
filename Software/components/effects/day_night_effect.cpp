@@ -1,6 +1,6 @@
 #include "day_night_effect.hpp"
 
-LedFrame DayNightEffect::get_led_data(DateTime time) { return LedFrame{}; }
+std::unique_ptr<LedFrame> DayNightEffect::get_led_data(DateTime time) { return std::make_unique<LedFrame>(); }
 
 esp_err_t DayNightEffect::set_filepath(const char *path) { return ESP_OK; }
 const std::string DayNightEffect::get_filepath() { return ""; }

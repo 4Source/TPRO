@@ -6,7 +6,8 @@ set(requires
         effects 
         led
         task_handles
-        config_manager)
+        config_manager
+        time)
 
 message(STATUS "Configure light-effect-manager component: ")
 

@@ -62,6 +62,9 @@ esp_err_t WifiNetwork::connect() {
 	// Start wifi
 	ESP_RETURN_ON_ERROR(esp_wifi_start(), kTag, "Failed to start WiFi");
 
+	esp_wifi_set_ps(WIFI_PS_NONE);
+	ESP_LOGI("NETWORK", "WiFi Power Save deaktiviert");
+
 	return wait_for_connection();
 }
 

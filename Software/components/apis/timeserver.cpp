@@ -23,7 +23,7 @@ void time_received(struct timeval *timeval) {
 	// time has been synchronized
 	g_time_synchronized = true;
 
-	ESP_LOGI(kTag, "Time synchronized successfully %s", get_current_time_str().c_str());
+	ESP_LOGI(kTag, "Time synchronized successfully %s", DateTime{}.to_string().c_str());
 }
 
 void init_timeserver() {
@@ -50,28 +50,6 @@ void init_timeserver() {
 	setenv("TZ", CONFIG_TIMEZONE, 1);
 	tzset();
 	ESP_LOGI(kTag, "Set timezone: %s", CONFIG_TIMEZONE);
-}
-
-std::string get_current_time_str() {
-	time_t now = 0;
-	std::string time_string(64, '\0');
-	struct tm timeinfo;
-
-	time(&now);
-
-	// Convert the current time to formatted string
-	localtime_r(&now, &timeinfo);
-	size_t len = strftime(time_string.data(), time_string.size(), "%d.%m.%Y %H:%M:%S", &timeinfo);
-
-	// trim to actual length
-	if (len > 0) {
-		time_string.resize(len);
-	} else {
-		ESP_LOGE(kTag, "Failed to format current time");
-		time_string.clear();
-	}
-
-	return time_string;
 }
 
 bool is_time_synchronized() {

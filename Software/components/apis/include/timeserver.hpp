@@ -1,4 +1,5 @@
 #pragma once
+#include "datetime.hpp"
 #include <string>
 #include <sys/time.h>
 
@@ -9,13 +10,6 @@ void init_timeserver();
 
 // callback function that is called when time is received from timeserver
 void time_received(struct timeval *timeval);
-
-/**
- * Converts the current system time to formatted string
- *
- * @retval The current system time as formattted string
- */
-std::string get_current_time_str();
 
 // returns whether or not the timeserver has been reached at least once
 bool is_time_synchronized();
