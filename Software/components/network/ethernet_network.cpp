@@ -10,6 +10,7 @@
 #include <esp_mac.h>
 #include <esp_netif.h>
 #include <esp_netif_ip_addr.h>
+#include <mdns.h>
 
 // This is for clang tidy when not configured the files still get analyzed and than have missing defines
 #ifdef __clang__
@@ -218,6 +219,9 @@ void EthernetNetwork::handle_eth_disconnected(esp_eth_handle_t event) {
 void EthernetNetwork::handle_got_ip(ip_event_got_ip_t *event) {
 	ESP_LOGI(kTag, "Ethernet successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 	xEventGroupSetBits(s_eth_event_group, ETH_CONNECTED_BIT);
+	mdns_init();
+	mdns_hostname_set("lightwall");
+	mdns_service_add("lightwall", "_http", "_tcp", 80, nullptr, 0);
 }
 
 void EthernetNetwork::handle_lost_ip() { ESP_LOGW(kTag, "Ethernet lost IPv4 address"); }
