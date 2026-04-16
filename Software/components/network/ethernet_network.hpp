@@ -127,7 +127,6 @@ class EthernetNetwork {
 	 */
 	static void handle_lost_ip();
 
-  private:
 	static constexpr const char *kTag = "ethernet-network";
 	static EventGroupHandle_t s_eth_event_group;
 	static esp_eth_handle_t s_eth_handle;

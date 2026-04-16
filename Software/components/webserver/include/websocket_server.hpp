@@ -1,5 +1,5 @@
 #include "led_frame.hpp"
-#include <esp_http_server.h>
+#include <esp_https_server.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -28,7 +28,8 @@ class WebsocketServer {
   private:
 #endif
 	httpd_handle_t m_server;
-	LedFrame &r_frame;
+
+	LedFrame &r_frame; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 
 	/**
 	 * @brief Holt die aktuellen Clients und sendet das LED-Array als Binary

@@ -7,5 +7,5 @@ class EffectFactory {
 	static std::unique_ptr<Effect> generate_from_json(const char *path);
 
   private:
-	static inline std::array<char, 32> _type_buffer;
+	static inline std::array<char, 32> type_buffer;
 };

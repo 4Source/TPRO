@@ -35,6 +35,7 @@ esp_err_t TimelineEffect::deserialize(const char *path) {
 		// BSP:
 		// json_obj_get_int(json_ctext,
 		// "KEY", &this->ATTR);
+		return ESP_OK;
 	});
 }
 
@@ -43,7 +44,7 @@ esp_err_t TimelineEffect::set_filepath(const char *path) {
 	_path = strdup(path);
 	return ESP_OK;
 }
-const std::string TimelineEffect::get_filepath() { return _path; }
+std::string TimelineEffect::get_filepath() { return _path; }
 
 esp_err_t TimelineEffect::set_subeffect(Effect *effect) {
 	if (effect == nullptr) {

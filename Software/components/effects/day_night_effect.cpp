@@ -3,7 +3,7 @@
 std::unique_ptr<LedFrame> DayNightEffect::get_led_data(DateTime time) { return std::make_unique<LedFrame>(); }
 
 esp_err_t DayNightEffect::set_filepath(const char *path) { return ESP_OK; }
-const std::string DayNightEffect::get_filepath() { return ""; }
+std::string DayNightEffect::get_filepath() { return ""; }
 
 esp_err_t DayNightEffect::request_api() { return ESP_OK; }
 
@@ -15,6 +15,7 @@ esp_err_t DayNightEffect::deserialize(const char *path) {
 		// BSP:
 		// json_obj_get_int(json_ctext,
 		// "KEY", &this->ATTR);
+		return ESP_OK;
 	});
 }
 

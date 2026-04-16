@@ -13,8 +13,14 @@ struct TimelineStep {
 /// erkannt
 class TimelineEffect : public Effect {
   public:
-	TimelineEffect() : _path(""), _path_buffer() {}
+	TimelineEffect() = default;
 	~TimelineEffect() override = default;
+
+	TimelineEffect(const TimelineEffect &) = delete;
+	TimelineEffect &operator=(const TimelineEffect &) = delete;
+	TimelineEffect(TimelineEffect &&) = delete;
+	TimelineEffect &operator=(TimelineEffect &&) = delete;
+
 	std::unique_ptr<LedFrame> get_led_data(DateTime time) override;
 
 	esp_err_t serialize(const char *path) override;
@@ -23,7 +29,7 @@ class TimelineEffect : public Effect {
 	esp_err_t set_parameter(const char *name, const char *value) override;
 
 	esp_err_t set_filepath(const char *path) override;
-	const std::string get_filepath() override;
+	std::string get_filepath() override;
 
   private:
 	std::vector<Effect *> _subeffects;

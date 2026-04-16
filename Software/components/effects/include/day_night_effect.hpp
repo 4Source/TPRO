@@ -5,8 +5,13 @@
 /// erkannt
 class DayNightEffect : public Effect {
   public:
-	DayNightEffect() : _path(""), _path_buffer() {}
+	DayNightEffect() = default;
 	~DayNightEffect() override = default;
+
+	DayNightEffect(const DayNightEffect &) = delete;
+	DayNightEffect &operator=(const DayNightEffect &) = delete;
+	DayNightEffect(DayNightEffect &&) = delete;
+	DayNightEffect &operator=(DayNightEffect &&) = delete;
 
 	std::unique_ptr<LedFrame> get_led_data(DateTime time) override;
 
@@ -16,7 +21,7 @@ class DayNightEffect : public Effect {
 	esp_err_t set_parameter(const char *name, const char *value) override;
 
 	esp_err_t set_filepath(const char *path) override;
-	const std::string get_filepath() override;
+	std::string get_filepath() override;
 
   private:
 	static esp_err_t request_api();

@@ -10,6 +10,8 @@
 #include <nvs_flash.h>
 #include <optional>
 
+static constexpr const char *kTag = "main";
+
 // TODO: Muss wirklich alles davon global sein?
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 std::optional<WebsocketServer> g_ws_server;
@@ -39,11 +41,11 @@ static void init_nvs_storage() {
  */
 static void handle_websocket_state(httpd_handle_t handle) {
 	if (handle != nullptr) {
-		ESP_LOGI("MAIN", "Webserver handle received, starting WebSocket...");
+		ESP_LOGI(kTag, "Webserver handle received, starting WebSocket...");
 		g_ws_server.emplace(handle, main_frame);
 		g_ws_server->run();
 	} else {
-		ESP_LOGW("MAIN", "Webserver handle lost, stopping WebSocket...");
+		ESP_LOGW(kTag, "Webserver handle lost, stopping WebSocket...");
 		if (g_ws_server.has_value()) {
 			g_ws_server->stop();
 			g_ws_server.reset();
@@ -53,7 +55,7 @@ static void handle_websocket_state(httpd_handle_t handle) {
 
 extern "C" void app_main(void) {
 	// Only used for pytest_boot
-	ESP_LOGI("main", "LED Wall startup");
+	ESP_LOGI(kTag, "LED Wall startup");
 
 	init_nvs_storage();
 
@@ -84,7 +86,7 @@ extern "C" void app_main(void) {
 	/**
 	 * This helper function starts the webserver
 	 */
-	ESP_ERROR_CHECK(init_webserver([&](httpd_handle_t handle) { handle_websocket_state(handle); }));
+	ESP_ERROR_CHECK(Webserver::init([&](httpd_handle_t handle) { handle_websocket_state(handle); }));
 
 	/*
 	 * This helper function starts Wi-Fi or Ethernet, as configured above.

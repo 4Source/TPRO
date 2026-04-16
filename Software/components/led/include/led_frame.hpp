@@ -20,15 +20,13 @@ struct __attribute__((packed)) RGB {
 // INFO: Reader/Writer Lock wird von rtos nicht unterstützt deshalb selbst implemetiert
 class LedFrame {
   public:
-	static constexpr uint16_t WIDTH = 54;
-	static constexpr uint16_t HEIGHT = 60;
+	static constexpr uint16_t kWidth = 54;
+	static constexpr uint16_t kHeight = 60;
 
-	std::array<std::array<RGB, HEIGHT>, WIDTH> led_data;
+	// NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
+	std::array<std::array<RGB, kHeight>, kWidth> led_data;
 
-	LedFrame() {
-		m_resource_mutex = xSemaphoreCreateMutex();
-		m_reader_mutex = xSemaphoreCreateMutex();
-	}
+	LedFrame() : led_data{}, m_resource_mutex{xSemaphoreCreateMutex()}, m_reader_mutex{xSemaphoreCreateMutex()} {}
 	~LedFrame() {
 		if (m_resource_mutex != nullptr) {
 			vSemaphoreDelete(m_resource_mutex);
@@ -40,26 +38,33 @@ class LedFrame {
 	// Nur explizit kopieren erlaubt
 	LedFrame(const LedFrame &) = delete;
 	LedFrame &operator=(const LedFrame &) = delete;
+	LedFrame(LedFrame &&) = delete;
+	LedFrame &operator=(LedFrame &&) = delete;
+
 	void copy_data_from(const LedFrame &other) { this->led_data = other.led_data; }
 
 	/// @brief Scoped Lock für schreiben
 	struct ScopedWriteLock {
 		LedFrame &frame;
-		explicit ScopedWriteLock(LedFrame &f) : frame(f) { frame.lock_write(); }
+		explicit ScopedWriteLock(LedFrame &frame) : frame(frame) { this->frame.lock_write(); }
 		~ScopedWriteLock() { frame.unlock_write(); }
 
 		ScopedWriteLock(const ScopedWriteLock &) = delete;
 		ScopedWriteLock &operator=(const ScopedWriteLock &) = delete;
+		ScopedWriteLock(ScopedWriteLock &&) = delete;
+		ScopedWriteLock &operator=(ScopedWriteLock &&) = delete;
 	};
 
 	/// @brief Scoped Lock für lesen
 	struct ScopedReadLock {
 		LedFrame &frame;
-		explicit ScopedReadLock(LedFrame &f) : frame(f) { frame.lock_read(); }
+		explicit ScopedReadLock(LedFrame &frame) : frame(frame) { this->frame.lock_read(); }
 		~ScopedReadLock() { frame.unlock_read(); }
 
 		ScopedReadLock(const ScopedReadLock &) = delete;
 		ScopedReadLock &operator=(const ScopedReadLock &) = delete;
+		ScopedReadLock(ScopedReadLock &&) = delete;
+		ScopedReadLock &operator=(ScopedReadLock &&) = delete;
 	};
 
   private:

@@ -35,5 +35,5 @@ struct DateTime {
 	/**
 	 * Returns the DateTime formatted as 'dd.mm.yyyy hh:mm:ss'
 	 */
-	std::string to_string() const;
+	[[nodiscard]] std::string to_string() const;
 };
