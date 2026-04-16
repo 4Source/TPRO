@@ -11,19 +11,24 @@ struct EffectParser {
 	// identisch) und ruft dann die spezifische Logik auf
 	template <typename F>
 	static esp_err_t parse_with_defaults(const char *json_text, char *path_out, size_t path_len,
-										 F &&specific_logic /*&& - müssen dann nur ein lambda übergeben*/) {
+										 F &&specific_logic /* - müssen dann nur ein lambda übergeben*/) {
 		jparse_ctx_t json_ctext;
-		if (json_parse_start(&json_ctext, json_text, strlen(json_text)) != OS_SUCCESS) {
+		if (json_parse_start(&json_ctext, json_text, static_cast<int>(strlen(json_text))) != OS_SUCCESS) {
 			return ESP_FAIL;
 		}
 
 		// Standrd-parser
-		json_obj_get_string(&json_ctext, "path", path_out, path_len);
+		if (json_obj_get_string(&json_ctext, "path", path_out, static_cast<int>(path_len)) != OS_SUCCESS) {
+			json_parse_end(&json_ctext);
+			return ESP_FAIL;
+		}
 
 		// Spezial-Parser
-		specific_logic(&json_ctext);
+		esp_err_t ret = ESP_FAIL;
+
+		ret = std::forward<F>(specific_logic)(&json_ctext);
 
 		json_parse_end(&json_ctext);
-		return ESP_OK;
+		return ret;
 	}
 };

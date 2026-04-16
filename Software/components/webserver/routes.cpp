@@ -4,6 +4,7 @@
 #include <array>
 #include <esp_check.h>
 #include <esp_log.h>
+#include <string>
 
 static constexpr const char *kTag = "webserver-routes";
 
@@ -53,6 +54,60 @@ static esp_err_t embedded_file_get_handler(httpd_req_t *req) {
 	return ESP_OK;
 }
 
+static esp_err_t redirect_get_handler(httpd_req_t *req) {
+	// Get Host header length first
+	size_t host_len = httpd_req_get_hdr_value_len(req, "Host");
+
+	if (host_len == 0) {
+		httpd_resp_send_500(req);
+		return ESP_FAIL;
+	}
+
+	// Allocate string with correct size (+1 for null terminator)
+	std::string host(host_len + 1, '\0');
+
+	if (httpd_req_get_hdr_value_str(req, "Host", host.data(), host.size()) != ESP_OK) {
+		httpd_resp_send_500(req);
+		return ESP_FAIL;
+	}
+
+	// Remove trailing null character that ESP-IDF writes
+	host.resize(host_len);
+
+	// Build redirect URL
+	std::string url = "https://" + host + &req->uri[0];
+
+	httpd_resp_set_status(req, "301 Moved Permanently");
+	httpd_resp_set_hdr(req, "Location", url.c_str());
+	httpd_resp_send(req, nullptr, 0);
+
+	return ESP_OK;
+}
+
+/**
+ * Registers a route and the handler for it
+ *
+ * @param handle handle to HTTPD server instance
+ * @param uri_handler pointer to handler that needs to be registered
+ * @retval - `ESP_OK`: Succeed
+ * @retval - `ESP_ERR_INVALID_ARG`: Null arguments
+ * @retval - `ESP_ERR_HTTPD_HANDLERS_FULL`: No slots left for new handler
+ * @retval - `ESP_ERR_HTTPD_HANDLER_EXISTS`: Handler with same URI and method already registered
+ *
+ * For more details, see:
+ *
+ * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
+ */
+static esp_err_t register_route(httpd_handle_t handle, const httpd_uri_t *uri_handler) {
+	esp_err_t ret = httpd_register_uri_handler(handle, uri_handler);
+	if (ret == ESP_OK) {
+		ESP_LOGI(kTag, "\tRegistered route: %s %s", http_method_to_str(uri_handler->method), uri_handler->uri);
+	} else {
+		ESP_LOGE(kTag, "\tFailed to registered route: %s %s", http_method_to_str(uri_handler->method), uri_handler->uri);
+	}
+	return ret;
+}
+
 namespace {
 embed_file_data *get_app_js_data() {
 	// NOLINTNEXTLINE(modernize-use-designated-initializers)
@@ -91,78 +146,82 @@ embed_file_data *get_vite_svg_data() {
  * First register the fixed assets routes and than register all remaining routes to point to the index.html and let it handle the rest. Routing is
  * than done by the browser including error pages.
  */
-constexpr size_t kRoutesSize = 6;
-static const std::array<httpd_uri_t, kRoutesSize> kRoutes{{
-	{.uri = "/assets/app.js",
-	 .method = HTTP_GET,
-	 .handler = embedded_file_get_handler,
-	 .user_ctx = get_app_js_data(),
-	 .is_websocket = false,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-	{.uri = "/assets/index.css",
-	 .method = HTTP_GET,
-	 .handler = embedded_file_get_handler,
-	 .user_ctx = get_index_css_data(),
-	 .is_websocket = false,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-	{.uri = "/assets/worldmap.svg",
-	 .method = HTTP_GET,
-	 .handler = embedded_file_get_handler,
-	 .user_ctx = get_worldmap_svg_data(),
-	 .is_websocket = false,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-	{.uri = "/vite.svg",
-	 .method = HTTP_GET,
-	 .handler = embedded_file_get_handler,
-	 .user_ctx = get_vite_svg_data(),
-	 .is_websocket = false,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-	{.uri = "/ws",
-	 .method = HTTP_GET,
-	 .handler = WebsocketServer::ws_handler,
-	 .user_ctx = nullptr,
-	 .is_websocket = true,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-	{.uri = "*",
-	 .method = HTTP_GET,
-	 .handler = embedded_file_get_handler,
-	 .user_ctx = get_index_html_data(),
-	 .is_websocket = false,
-	 .handle_ws_control_frames = false,
-	 .supported_subprotocol = nullptr},
-}};
+static const std::array kHttpsRoutes{
+	httpd_uri_t{.uri = "/assets/app.js",
+				.method = HTTP_GET,
+				.handler = embedded_file_get_handler,
+				.user_ctx = get_app_js_data(),
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/assets/index.css",
+				.method = HTTP_GET,
+				.handler = embedded_file_get_handler,
+				.user_ctx = get_index_css_data(),
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/assets/worldmap.svg",
+				.method = HTTP_GET,
+				.handler = embedded_file_get_handler,
+				.user_ctx = get_worldmap_svg_data(),
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/vite.svg",
+				.method = HTTP_GET,
+				.handler = embedded_file_get_handler,
+				.user_ctx = get_vite_svg_data(),
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/ws",
+				.method = HTTP_GET,
+				.handler = WebsocketServer::ws_handler,
+				.user_ctx = nullptr,
+				.is_websocket = true,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/*",
+				.method = HTTP_GET,
+				.handler = embedded_file_get_handler,
+				.user_ctx = get_index_html_data(),
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+};
 
-/**
- * Registers a route and the handler for it
- *
- * @param handle handle to HTTPD server instance
- * @param uri_handler pointer to handler that needs to be registered
- * @retval - `ESP_OK`: Succeed
- * @retval - `ESP_ERR_INVALID_ARG`: Null arguments
- * @retval - `ESP_ERR_HTTPD_HANDLERS_FULL`: No slots left for new handler
- * @retval - `ESP_ERR_HTTPD_HANDLER_EXISTS`: Handler with same URI and method already registered
- *
- * For more details, see:
- *
- * - [ESP-IDF HTTP Server Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/protocols/esp_http_server.html)
- */
-static esp_err_t register_route(httpd_handle_t handle, const httpd_uri_t *uri_handler) {
-	esp_err_t ret = httpd_register_uri_handler(handle, uri_handler);
-	if (ret == ESP_OK) {
-		ESP_LOGI(kTag, "Registered route: %s %s", http_method_to_str(uri_handler->method), uri_handler->uri);
-	} else {
-		ESP_LOGE(kTag, "Failed to registered route: %s %s", http_method_to_str(uri_handler->method), uri_handler->uri);
+esp_err_t register_https_routes(httpd_handle_t handle) {
+	ESP_LOGI(kTag, "Register https routes:");
+	for (const auto &route : kHttpsRoutes) {
+		esp_err_t err = register_route(handle, &route);
+		if (err != ESP_OK) {
+			ESP_LOGE(kTag, "Failed to register route");
+			return err;
+		}
 	}
-	return ret;
+	return ESP_OK;
 }
 
-esp_err_t register_routes(httpd_handle_t handle) {
-	for (const auto &route : kRoutes) {
+/**
+ * Configurations for routes
+ *
+ * First register the fixed assets routes and than register all remaining routes to point to the index.html and let it handle the rest. Routing is
+ * than done by the browser including error pages.
+ */
+static const std::array kHttpRoutes{
+	httpd_uri_t{.uri = "/*",
+				.method = HTTP_GET,
+				.handler = redirect_get_handler,
+				.user_ctx = nullptr,
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+};
+
+esp_err_t register_http_routes(httpd_handle_t handle) {
+	ESP_LOGI(kTag, "Register https routes:");
+	for (const auto &route : kHttpRoutes) {
 		esp_err_t err = register_route(handle, &route);
 		if (err != ESP_OK) {
 			ESP_LOGE(kTag, "Failed to register route");

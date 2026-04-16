@@ -23,7 +23,7 @@ class Network {
 	 *
 	 * - [ESP-IDF Ethernet Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/network/esp_eth.html)
 	 */
-	static esp_err_t init(void);
+	static esp_err_t init();
 
 	/**
 	 * Start the network connections Wi-Fi and/or Ethernet. Should be configured first with init.
@@ -46,7 +46,7 @@ class Network {
 	 *
 	 * - [ESP-IDF Ethernet Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-reference/network/esp_eth.html)
 	 */
-	static esp_err_t connect(void);
+	static esp_err_t connect();
 
   private:
 	static constexpr const char *kTag = "network";

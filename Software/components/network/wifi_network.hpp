@@ -26,7 +26,7 @@ class WifiNetwork {
 	 * - [ESP-IDF WiFi Driver
 	 * Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-guides/wifi-driver/station-scenarios.html)
 	 */
-	static esp_err_t init(void);
+	static esp_err_t init();
 
 	/**
 	 * Start the WiFi network connection. Should be configured first with init.
@@ -47,7 +47,7 @@ class WifiNetwork {
 	 * - [ESP-IDF WiFi Driver
 	 * Documentation](https://docs.espressif.com/projects/esp-idf/en/v6.0/esp32s3/api-guides/wifi-driver/station-scenarios.html)
 	 */
-	static esp_err_t connect(void);
+	static esp_err_t connect();
 
   private:
 	/*
@@ -121,7 +121,6 @@ class WifiNetwork {
 	 */
 	static void handle_lost_ip();
 
-  private:
 	static constexpr const char *kTag = "wifi-network";
 	static EventGroupHandle_t s_wifi_event_group;
 	static uint8_t s_retry_num;

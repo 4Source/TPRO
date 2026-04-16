@@ -5,8 +5,8 @@
 TEST(WebsocketServerTest, SendFrameDataCorrectly) {
 	LedFrame frame;
 	// Testwerte
-	for (int x = 0; x < LedFrame::WIDTH; x++) {
-		for (int y = 0; y < LedFrame::HEIGHT; y++) {
+	for (int x = 0; x < LedFrame::kWidth; x++) {
+		for (int y = 0; y < LedFrame::kHeight; y++) {
 			frame.led_data[x][y] = {1, 2, 3};
 		}
 	}
@@ -20,7 +20,7 @@ TEST(WebsocketServerTest, SendFrameDataCorrectly) {
 	EXPECT_EQ(err, ESP_OK);
 
 	// WIDTH * HEIGHT * (3 Bytes pro Pixel)
-	size_t expected_size = LedFrame::WIDTH * LedFrame::HEIGHT * 3;
+	size_t expected_size = LedFrame::kWidth * LedFrame::kHeight * 3;
 	EXPECT_EQ(last_send_len, expected_size);
 
 	// KOmmt erstes Pixel korrekt an

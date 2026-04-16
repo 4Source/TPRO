@@ -5,11 +5,12 @@ set(srcs
         routes.cpp)
 set(include_dirs include)
 set(requires 
-        esp_http_server
+        esp_https_server 
         task_handles
         network
         led)
 set(embed)
+set(embed_txt)
 
 # Add webpage files to embedded files
 message(STATUS "Collect webserver files: ")
@@ -30,13 +31,30 @@ foreach(FILE IN LISTS web_files)
     endif()
 endforeach()
 
+# Add certificates embedded files
+message(STATUS "Collect certificates files: ")
+set(cert_files 
+        "certs/server_key.pem"
+        "certs/server_cert.pem")
+
+foreach(FILE IN LISTS cert_files)
+    set(FILE_PATH ${COMPONENT_DIR}/${FILE})
+    if(NOT EXISTS ${FILE_PATH})
+        message(FATAL_ERROR "Error: Certificate files (${FILE_PATH}) are missing! Try running the 'Cert: generate' first.")
+    else()
+        message(STATUS "\t- ${FILE_PATH}")
+        list(APPEND embed_txt ${FILE})
+    endif()
+endforeach()
+
 message(STATUS "Configure webserver component: ")
 
 # Create auto generated header for embed files 
 message(STATUS "\tCreate embedded files header: ")
 set(EMBED_HEADER "${COMPONENT_DIR}/include/embedded_files.hpp")
-file(WRITE ${EMBED_HEADER} "#pragma once \n\n // Auto-generated file\n\n")
-foreach(FILE IN LISTS embed)
+set(CLANG_IGNORE "readability-identifier-naming, cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-interfaces-global-init")
+file(WRITE ${EMBED_HEADER} "#pragma once \n#include <cstddef>\n\n// Auto-generated file\n\n// NOLINTBEGIN(${CLANG_IGNORE})\n\n")
+foreach(FILE IN LISTS embed embed_txt)
     set(FILE_PATH ${COMPONENT_DIR}/${FILE})
     if(NOT EXISTS ${FILE_PATH})
         message(FATAL_ERROR "Error: Embedded file (${FILE_PATH}) is missing!")
@@ -55,10 +73,11 @@ foreach(FILE IN LISTS embed)
             "extern const unsigned char ${SYMBOL}_end[] asm(\"_binary_${SYMBOL}_end\");\n"
         )
         file(APPEND ${EMBED_HEADER}
-            "const size_t ${SYMBOL}_size = (${SYMBOL}_end - ${SYMBOL}_start);\n\n"
+            "const size_t ${SYMBOL}_size = static_cast<size_t>(&${SYMBOL}_end[0] - &${SYMBOL}_start[0]);\n\n"
         )
     endif()
 endforeach()
+file(APPEND ${EMBED_HEADER} "// NOLINTEND(${CLANG_IGNORE})\n")
 
 # Register the component
 message(STATUS "\tRegister webserver component with:")
@@ -69,6 +88,7 @@ message(STATUS "\t\tEmbed files: ${embed}")
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}
                        REQUIRES  ${requires}
-                       EMBED_FILES ${embed})
+                       EMBED_FILES ${embed}
+                       EMBED_TXTFILES ${embed_txt})
 
 message(STATUS "Configure webserver component done")

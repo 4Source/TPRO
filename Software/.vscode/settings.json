@@ -63,6 +63,10 @@
             "task": "Clang: Tidy"
         },
         {
+            "label": "$(pass) Unit Tests",
+            "task": "Unit Tests"
+        },
+        {
             "label": "$(trash) Clean",
             "task": "ESP-IDF: Full Clean"
         },
@@ -85,6 +89,10 @@
         {
             "label": "$(zap) Project: Build",
             "task": "Project: Build"
+        },
+        {
+            "label": "$(preview) Generate HTTPS Cert",
+            "task": "Generate HTTPS Cert"
         }
     ]
 }

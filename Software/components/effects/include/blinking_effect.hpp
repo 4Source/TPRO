@@ -8,6 +8,11 @@ class BlinkingEffect : public Effect {
 	BlinkingEffect();
 	~BlinkingEffect() override = default;
 
+	BlinkingEffect(const BlinkingEffect &) = delete;
+	BlinkingEffect &operator=(const BlinkingEffect &) = delete;
+	BlinkingEffect(BlinkingEffect &&) = delete;
+	BlinkingEffect &operator=(BlinkingEffect &&) = delete;
+
 	std::unique_ptr<LedFrame> get_led_data(DateTime time_stamp) override;
 
 	esp_err_t serialize(const char *path) override;
@@ -16,7 +21,7 @@ class BlinkingEffect : public Effect {
 	esp_err_t set_parameter(const char *name, const char *value) override;
 
 	esp_err_t set_filepath(const char *path) override;
-	const std::string get_filepath() override;
+	std::string get_filepath() override;
 
   private:
 	std::string _path;

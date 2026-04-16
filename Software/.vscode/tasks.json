@@ -61,6 +61,11 @@
             "problemMatcher": []
         },
         {
+            "label": "Unit Tests",
+            "type": "shell",
+            "command": "$(git rev-parse --show-toplevel)/Software/run_unit_tests.sh"
+        },
+        {
             "label": "Preact: Develop",
             "type": "shell",
             "command": "bash",
@@ -101,10 +106,16 @@
         {
             "label": "Project: Build",
             "dependsOn": [
+                "Generate HTTPS Cert",
                 "Preact: Build",
                 "ESP-IDF: Build Project"
             ],
             "dependsOrder": "sequence"
+        },
+        {
+            "label": "Generate HTTPS Cert",
+            "type": "shell",
+            "command": "$(git rev-parse --show-toplevel)/Software/components/webserver/certs/generate.sh"
         }
     ]
 }

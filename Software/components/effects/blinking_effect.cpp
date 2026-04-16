@@ -48,7 +48,7 @@ esp_err_t BlinkingEffect::set_filepath(const char *path) {
 	return ESP_ERR_INVALID_ARG;
 }
 
-const std::string BlinkingEffect::get_filepath() { return _path; }
+std::string BlinkingEffect::get_filepath() { return _path; }
 
 esp_err_t BlinkingEffect::set_parameter(const char *name, const char *value) {
 	// Not implemented for this simple test effect
