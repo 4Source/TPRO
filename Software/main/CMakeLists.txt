@@ -8,6 +8,7 @@ set(requires
         effects
         esp_driver_gpio
         log
+        file_manager
         driver
         apis)
 

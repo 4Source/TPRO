@@ -1,5 +1,6 @@
 #include "blinking_effect.hpp"
 #include "config_manager.hpp"
+#include "file_manager.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
 #include "timeserver.hpp"
@@ -101,6 +102,12 @@ extern "C" void app_main(void) {
 	effect_manager.register_effect(&blink);
 	effect_manager.set_effect(&blink);
 	effect_manager.start();
+
+	// Run Selftest for FileManager
+	if (FileManager::run_selftest() != ESP_OK) {
+		ESP_LOGE("main", "File manager self-test failed");
+		return;
+	}
 
 	while (true) {
 		// Delay to simulate load
