@@ -147,10 +147,12 @@ void WifiNetwork::handle_sta_reconnect(wifi_event_sta_disconnected_t *event) {
 void WifiNetwork::handle_got_ip(ip_event_got_ip_t *event) {
 	ESP_LOGI(kTag, "WiFi successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 	s_retry_num = 0;
-	xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 	mdns_init();
-	mdns_hostname_set("lightwall");
-	mdns_service_add("lightwall", "_http", "_tcp", 80, nullptr, 0);
+	mdns_hostname_set(CONFIG_LWIP_LOCAL_HOSTNAME);
+	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_http", "_tcp", 80, nullptr, 0);
+	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_https", "_tcp", 443, nullptr, 0);
+	ESP_LOGI(kTag, "WiFi successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
+	xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 }
 
 void WifiNetwork::handle_lost_ip() { ESP_LOGW(kTag, "WiFi lost IPv4 address"); }
