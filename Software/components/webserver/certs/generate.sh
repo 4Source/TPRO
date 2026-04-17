@@ -8,6 +8,18 @@ CONF="$CERT_DIR/server_cert.conf"
 
 mkdir -p "$CERT_DIR"
 
+SDKCONFIG="$(git rev-parse --show-toplevel)/Software/sdkconfig"
+if [ ! -f "$SDKCONFIG" ]; then
+    echo "sdkconfig not found use sdkconfig.defaults instead"
+    SDKCONFIG="$(git rev-parse --show-toplevel)/Software/sdkconfig.defaults"
+fi
+HOSTNAME=$(grep 'CONFIG_LWIP_LOCAL_HOSTNAME=' "$SDKCONFIG" | cut -d= -f2 | tr -d '"')
+if [ -z "$HOSTNAME" ]; then
+    echo "ERROR: CONFIG_LWIP_LOCAL_HOSTNAME not set"
+    exit 1
+fi
+MDNS_NAME="${HOSTNAME}.local"
+
 if [ -f "$KEY" ] && [ -f "$CERT" ]; then
     echo "Certificate already exists. Skipping."
 
@@ -17,6 +29,9 @@ if [ -f "$KEY" ] && [ -f "$CERT" ]; then
     KEY_HASH=$(openssl rsa -noout -modulus -in "$KEY" | openssl md5);
     if [ "$CERT_HASH" != "$KEY_HASH" ]; then 
         echo 'ERROR: Key does not match certificate'; 
+        rm -f "$KEY" "$CERT"
+    elif ! openssl x509 -in "$CERT" -noout -ext subjectAltName | grep -q "DNS:$MDNS_NAME"; then
+        echo 'ERROR: Hostname is not mentioned in certificate'; 
         rm -f "$KEY" "$CERT"
     else
         echo "Done."
@@ -31,7 +46,8 @@ openssl req -x509 -newkey rsa:2048 \
     -out "$CERT" \
     -days 3650 \
     -nodes \
-    -config "$CONF"
+    -config "$CONF" \
+    -addext "subjectAltName=DNS:${MDNS_NAME},DNS:localhost"
 
 echo "Verifying certificate..."
 openssl verify -CAfile "$CERT" "$CERT"

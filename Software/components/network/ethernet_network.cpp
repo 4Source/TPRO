@@ -218,10 +218,12 @@ void EthernetNetwork::handle_eth_disconnected(esp_eth_handle_t event) {
 
 void EthernetNetwork::handle_got_ip(ip_event_got_ip_t *event) {
 	ESP_LOGI(kTag, "Ethernet successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
-	xEventGroupSetBits(s_eth_event_group, ETH_CONNECTED_BIT);
 	mdns_init();
-	mdns_hostname_set("lightwall");
-	mdns_service_add("lightwall", "_http", "_tcp", 80, nullptr, 0);
+	mdns_hostname_set(CONFIG_LWIP_LOCAL_HOSTNAME);
+	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_http", "_tcp", 80, nullptr, 0);
+	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_https", "_tcp", 443, nullptr, 0);
+	ESP_LOGI(kTag, "Ethernet successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
+	xEventGroupSetBits(s_eth_event_group, ETH_CONNECTED_BIT);
 }
 
 void EthernetNetwork::handle_lost_ip() { ESP_LOGW(kTag, "Ethernet lost IPv4 address"); }
