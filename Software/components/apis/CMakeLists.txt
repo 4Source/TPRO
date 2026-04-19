@@ -3,7 +3,8 @@ set(srcs
         timeserver.cpp)
 set(include_dirs include)
 set(requires 
-        time)
+        time
+        esp_https_server)
 
 message(STATUS "Configure apis component: ")
 

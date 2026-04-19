@@ -3,6 +3,7 @@
 #include "file_manager.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
+#include "restserver.hpp"
 #include "timeserver.hpp"
 #include "webserver.hpp"
 #include "websocket_server.hpp"
@@ -87,7 +88,10 @@ extern "C" void app_main(void) {
 	/**
 	 * This helper function starts the webserver
 	 */
-	ESP_ERROR_CHECK(Webserver::init([&](httpd_handle_t handle) { handle_websocket_state(handle); }));
+	ESP_ERROR_CHECK(Webserver::init([&](httpd_handle_t handle) {
+		handle_websocket_state(handle);
+		RestServer::init(main_config, handle);
+	}));
 
 	/*
 	 * This helper function starts Wi-Fi or Ethernet, as configured above.

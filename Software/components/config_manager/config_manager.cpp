@@ -3,6 +3,7 @@
 #include "./config_type.hpp"
 #include <algorithm>
 #include <map>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -63,13 +64,13 @@ void ConfigManager::notify_observers(const std::string &key) {
 	}
 }
 
-bool ConfigManager::add_observer(const std::string &key, ConfigObserver &observer) {
+esp_err_t ConfigManager::add_observer(const std::string &key, ConfigObserver &observer) {
 
 	// Check if observer list allready contains the key if not insert the observer
 	if (!observer_list.contains(key)) {
 		// No creation of empty vector needed see: https://en.cppreference.com/w/cpp/container/unordered_map/operator_at.html
 		observer_list[key].push_back(&observer);
-		return true;
+		return ESP_OK;
 	}
 
 	auto it_key_observers = std::find(observer_list[key].begin(), observer_list[key].end(), &observer);
@@ -77,17 +78,17 @@ bool ConfigManager::add_observer(const std::string &key, ConfigObserver &observe
 	// Check if observer list for this key allready contains the observer
 	if (it_key_observers != observer_list[key].end()) {
 		// Exit early because observer allready registered
-		return false;
+		return ESP_OK;
 	}
 
 	observer_list[key].push_back(&observer);
-	return true;
+	return ESP_OK;
 }
 
-bool ConfigManager::remove_observer(const std::string &key, const ConfigObserver &observer) {
+esp_err_t ConfigManager::remove_observer(const std::string &key, const ConfigObserver &observer) {
 	// Check if observer list contains the key
 	if (!observer_list.contains(key)) {
-		return false;
+		return ESP_OK;
 	}
 
 	auto it_key_observers = std::find(observer_list[key].begin(), observer_list[key].end(), &observer);
@@ -95,23 +96,46 @@ bool ConfigManager::remove_observer(const std::string &key, const ConfigObserver
 	// Check if observer list for this key contains the observer
 	if (it_key_observers == observer_list[key].end()) {
 		// Exit early because observer allready registered
-		return false;
+		return ESP_OK;
 	}
 
 	// Remove the observer from the vector
 	observer_list[key].erase(it_key_observers);
-	return true;
+	return ESP_OK;
 }
 
 //(PUT)
 void ConfigManager::set_config(const std::string &key, const std::string &value) {
-	if (key == "current_effect") {
+	KEY enum_key = stringToEnum.at(key);
+	switch (enum_key) {
+	case CURRENT_EFFECT: {
 		config.current_effect = std::filesystem::path(value);
-	} else if (key == "effects_path") {
-		config.effects_path = std::filesystem::path(value);
-	} else {
-		// key doesn't exist, maybe return bool?
+		break;
 	}
+	case EFFECTS_PATH: {
+		config.effects_path = std::filesystem::path(value);
+		break;
+	}
+	case SPEED: {
+		// check if value is a number
+		if (std::ranges::all_of(value, ::isdigit)) {
+			config.speed = std::stoi(value);
+		}
+		break;
+	}
+	case BRIGHTNESS: {
+		// check if value is a number
+		if (std::ranges::all_of(value, ::isdigit)) {
+			config.brightness = std::stoi(value);
+		}
+		break;
+	}
+	default: {
+		// key not found
+		break;
+	}
+	}
+
 	notify_observers(key); // update observers
 }
 
@@ -123,12 +147,28 @@ void ConfigManager::set_config(ConfigType new_config) {
 
 //(DELETE)
 void ConfigManager::set_to_default(const std::string &key) {
-	if (key == "current_effect") {
+	KEY enum_key = stringToEnum.at(key);
+	switch (enum_key) {
+	case CURRENT_EFFECT: {
 		config.current_effect = std::filesystem::path("");
-	} else if (key == "effects_path") {
+		break;
+	}
+	case EFFECTS_PATH: {
 		config.effects_path = std::filesystem::path("");
-	} else {
-		// key doesn't exist, maybe return bool?
+		break;
+	}
+	case SPEED: {
+		config.speed = 0;
+		break;
+	}
+	case BRIGHTNESS: {
+		config.brightness = 0;
+		break;
+	}
+	default: {
+		// key not found
+		break;
+	}
 	}
 	notify_observers();
 }

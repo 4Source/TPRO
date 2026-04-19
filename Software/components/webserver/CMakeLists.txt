@@ -2,13 +2,16 @@
 set(srcs 
         webserver.cpp
         websocket_server.cpp
-        routes.cpp)
+        routes.cpp
+        restserver.cpp)
 set(include_dirs include)
 set(requires 
         esp_https_server 
         task_handles
         network
-        led)
+        led
+        apis
+        config_manager)
 set(embed)
 set(embed_txt)
 
