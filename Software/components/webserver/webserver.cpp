@@ -73,6 +73,8 @@ void Webserver::connect_handler(void *arg_0, esp_event_base_t event_base, int32_
 
 	https_config.httpd.uri_match_fn = httpd_uri_match_wildcard;
 
+	https_config.httpd.max_uri_handlers = 10; // default is 8 but we have more routes to register
+
 	if (httpd_ssl_start(&g_https_server_handle, &https_config) == ESP_OK) {
 		register_https_routes(g_https_server_handle);
 

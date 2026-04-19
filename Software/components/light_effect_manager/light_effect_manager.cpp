@@ -178,7 +178,7 @@ void LightEffectManager::update(const std::string &key) {
 
 	if (key == "current_effect") {
 		auto path = config_manager->get_config("current_effect");
-		set_effect(path.string().c_str());
+		set_effect(path.c_str());
 	}
 }
 
