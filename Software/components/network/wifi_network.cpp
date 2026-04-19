@@ -28,8 +28,8 @@ EventGroupHandle_t WifiNetwork::s_wifi_event_group = xEventGroupCreate();
 esp_err_t WifiNetwork::init() {
 	ESP_LOGI(kTag, "Setup wifi connection...");
 	// Initialize wifi and start the task
-	wifi_init_config_t wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_cfg), kTag, "Failed to initialize wifi");
+	wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_init_config), kTag, "Failed to initialize wifi");
 
 	// Register event handler
 	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr), kTag,
