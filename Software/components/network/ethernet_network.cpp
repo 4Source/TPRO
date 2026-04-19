@@ -170,7 +170,7 @@ esp_err_t EthernetNetwork::init_spi(spi_device_interface_config_t *device_config
 	device_config->command_bits = 16;
 	device_config->address_bits = 8;
 	device_config->mode = 0;
-	device_config->clock_speed_hz = 20 * 1000 * 1000; // 20 MHz
+	device_config->clock_speed_hz = 40 * 1000 * 1000; // 40 MHz (80 MHz would be the maximum W5500 supports but maybe unstable)
 	device_config->spics_io_num = CONFIG_ETHERNET_SPI_CS_GPIO;
 	device_config->queue_size = 20;
 

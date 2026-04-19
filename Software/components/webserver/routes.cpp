@@ -36,7 +36,8 @@ struct embed_file_data {
 static esp_err_t embedded_file_get_handler(httpd_req_t *req) {
 	auto *file_data = static_cast<embed_file_data *>(req->user_ctx);
 
-	ESP_LOGD(kTag, "Requested route: %s %s", http_method_to_str(static_cast<httpd_method_t>(req->method)), static_cast<const char *>(req->uri));
+	ESP_LOGD(kTag, "Requested route method=%s fd=%d uri=%s", http_method_to_str(static_cast<httpd_method_t>(req->method)), httpd_req_to_sockfd(req),
+			 static_cast<const char *>(req->uri));
 	// Set the content type of the response to the type of the file
 	esp_err_t err = httpd_resp_set_type(req, file_data->file_content_type);
 	if (err != ESP_OK) {
@@ -51,36 +52,6 @@ static esp_err_t embedded_file_get_handler(httpd_req_t *req) {
 		ESP_LOGE(kTag, "Failed to set the content for the response");
 		return err;
 	}
-
-	return ESP_OK;
-}
-
-static esp_err_t redirect_get_handler(httpd_req_t *req) {
-	// Get Host header length first
-	size_t host_len = httpd_req_get_hdr_value_len(req, "Host");
-
-	if (host_len == 0) {
-		httpd_resp_send_500(req);
-		return ESP_FAIL;
-	}
-
-	// Allocate string with correct size (+1 for null terminator)
-	std::string host(host_len + 1, '\0');
-
-	if (httpd_req_get_hdr_value_str(req, "Host", host.data(), host.size()) != ESP_OK) {
-		httpd_resp_send_500(req);
-		return ESP_FAIL;
-	}
-
-	// Remove trailing null character that ESP-IDF writes
-	host.resize(host_len);
-
-	// Build redirect URL
-	std::string url = "https://" + host + &req->uri[0];
-
-	httpd_resp_set_status(req, "301 Moved Permanently");
-	httpd_resp_set_hdr(req, "Location", url.c_str());
-	httpd_resp_send(req, nullptr, 0);
 
 	return ESP_OK;
 }
@@ -216,34 +187,6 @@ static const std::array kHttpsRoutes{
 esp_err_t register_https_routes(httpd_handle_t handle) {
 	ESP_LOGI(kTag, "Register https routes:");
 	for (const auto &route : kHttpsRoutes) {
-		esp_err_t err = register_route(handle, &route);
-		if (err != ESP_OK) {
-			ESP_LOGE(kTag, "Failed to register route");
-			return err;
-		}
-	}
-	return ESP_OK;
-}
-
-/**
- * Configurations for routes
- *
- * First register the fixed assets routes and than register all remaining routes to point to the index.html and let it handle the rest. Routing is
- * than done by the browser including error pages.
- */
-static const std::array kHttpRoutes{
-	httpd_uri_t{.uri = "/*",
-				.method = HTTP_GET,
-				.handler = redirect_get_handler,
-				.user_ctx = nullptr,
-				.is_websocket = false,
-				.handle_ws_control_frames = false,
-				.supported_subprotocol = nullptr},
-};
-
-esp_err_t register_http_routes(httpd_handle_t handle) {
-	ESP_LOGI(kTag, "Register https routes:");
-	for (const auto &route : kHttpRoutes) {
 		esp_err_t err = register_route(handle, &route);
 		if (err != ESP_OK) {
 			ESP_LOGE(kTag, "Failed to register route");

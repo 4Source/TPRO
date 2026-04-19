@@ -2,7 +2,7 @@ menu "Timeserver"
 
     config POLLING_INTERVAL
         int "Polling interval (ms)"
-        default 360000
+        default 10800000
         help
             The interval in ms how often the timeserver should be asked for a new time.
 
