@@ -118,7 +118,7 @@ esp_err_t WebsocketServer::stop() {
 		TaskHandle::x_websocket_task_handle = nullptr;
 	}
 
-	// m_server wird vom übergeordneten Webserver aufgeräumt,
+	// m_server wird vom übergeordneten HTTPs server aufgeräumt,
 	m_server = nullptr;
 
 	return ESP_OK;

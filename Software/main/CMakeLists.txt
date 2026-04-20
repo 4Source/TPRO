@@ -1,6 +1,6 @@
 set(requires 
         network 
-        webserver 
+        https_server 
         config_manager
         nvs_flash
         led 

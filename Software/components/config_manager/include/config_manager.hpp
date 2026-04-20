@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <esp_err.h>
+#include <esp_log.h>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -23,6 +24,8 @@ class ConfigManager {
 
 	std::unordered_map<std::string, KEY> stringToEnum = {
 		{"current_effect", CURRENT_EFFECT}, {"effects_path", EFFECTS_PATH}, {"speed", SPEED}, {"brightness", BRIGHTNESS}};
+
+	static constexpr const char *kTag = "config-manager";
 
   public:
 	ConfigManager();
@@ -72,6 +75,11 @@ class ConfigManager {
 	//(GET)
 	std::string get_config(const std::string &key) const {
 		std::string result;
+		if (!stringToEnum.contains(key)) {
+			ESP_LOGE(kTag, "Tried to access Unknown key");
+			return result;
+		}
+
 		KEY enum_key = stringToEnum.at(key);
 		switch (enum_key) {
 		case CURRENT_EFFECT:
@@ -87,7 +95,6 @@ class ConfigManager {
 			result = std::to_string(config.brightness);
 			break;
 		default:
-			result = "";
 			break;
 		}
 
@@ -95,11 +102,11 @@ class ConfigManager {
 	}
 
 	//(PUT)
-	void set_config(const std::string &key, const std::string &value);
+	esp_err_t set_config(const std::string &key, const std::string &value);
 
 	//(POST)
-	void set_config(ConfigType new_config);
+	esp_err_t set_config(ConfigType new_config);
 
 	//(DELETE)
-	void set_to_default(const std::string &key);
+	esp_err_t set_to_default(const std::string &key);
 };

@@ -105,7 +105,11 @@ esp_err_t ConfigManager::remove_observer(const std::string &key, const ConfigObs
 }
 
 //(PUT)
-void ConfigManager::set_config(const std::string &key, const std::string &value) {
+esp_err_t ConfigManager::set_config(const std::string &key, const std::string &value) {
+	if (!stringToEnum.contains(key)) {
+		ESP_LOGE(kTag, "Tried to access Unknown key");
+		return ESP_FAIL;
+	}
 	KEY enum_key = stringToEnum.at(key);
 	switch (enum_key) {
 	case CURRENT_EFFECT: {
@@ -120,6 +124,9 @@ void ConfigManager::set_config(const std::string &key, const std::string &value)
 		// check if value is a number
 		if (std::ranges::all_of(value, ::isdigit)) {
 			config.speed = std::stoi(value);
+		} else {
+			ESP_LOGW(kTag, "Invalid value");
+			return ESP_FAIL;
 		}
 		break;
 	}
@@ -127,26 +134,35 @@ void ConfigManager::set_config(const std::string &key, const std::string &value)
 		// check if value is a number
 		if (std::ranges::all_of(value, ::isdigit)) {
 			config.brightness = std::stoi(value);
+		} else {
+			ESP_LOGW(kTag, "Invalid value");
+			return ESP_FAIL;
 		}
 		break;
 	}
 	default: {
-		// key not found
-		break;
+		ESP_LOGE(kTag, "Tried to access Unknown key");
+		return ESP_FAIL;
 	}
 	}
 
 	notify_observers(key); // update observers
+	return ESP_OK;
 }
 
 //(POST)
-void ConfigManager::set_config(ConfigType new_config) {
+esp_err_t ConfigManager::set_config(ConfigType new_config) {
 	config = std::move(new_config);
 	notify_observers();
+	return ESP_OK;
 }
 
 //(DELETE)
-void ConfigManager::set_to_default(const std::string &key) {
+esp_err_t ConfigManager::set_to_default(const std::string &key) {
+	if (!stringToEnum.contains(key)) {
+		ESP_LOGE(kTag, "Tried to access Unknown key");
+		return ESP_FAIL;
+	}
 	KEY enum_key = stringToEnum.at(key);
 	switch (enum_key) {
 	case CURRENT_EFFECT: {
@@ -166,9 +182,10 @@ void ConfigManager::set_to_default(const std::string &key) {
 		break;
 	}
 	default: {
-		// key not found
-		break;
+		ESP_LOGE(kTag, "Tried to access Unknown key");
+		return ESP_FAIL;
 	}
 	}
 	notify_observers();
+	return ESP_OK;
 }

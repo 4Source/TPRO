@@ -33,9 +33,6 @@ esp_err_t register_https_routes(httpd_handle_t handle);
 esp_err_t register_http_routes(httpd_handle_t handle);
 
 /**
- * Converts the `httpd_method_t` to the corrsponding string
- *
- * @param method The method to convert
- * @returns The string representation
+ * Returns the number of routes listed in the array
  */
-constexpr const char *http_method_to_str(httpd_method_t method);
+uint16_t get_number_of_https_routes();

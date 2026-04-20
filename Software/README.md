@@ -4,29 +4,49 @@ Software/
 ├── .vscode/
 ├── build/ [auto generated]
 ├── components/ 
-│   ├── network/
+│   ├── https_server/
+│   │   ├── certs/ 
+│   │   │   ├── generate.sh
+│   │   │   ├── README.md
+│   │   │   ├── server_cert.conf
+│   │   │   ├── server_cert.pem [generated]
+│   │   │   └── server_key.pem [generated]
 │   │   ├── include/ 
-│   │   │   └── network.hpp
+│   │   │   ├── https_server.hpp
+│   │   │   ├── restserver.hpp
+│   │   │   └── websocket_server.hpp
+│   │   ├── www/
+│   │   │   ├── assets/
+│   │   │   │   ├── app.js
+│   │   │   │   └── index.css
+│   │   │   └── index.html
+│   │   ├── .gitignore
 │   │   ├── CMakeLists.txt
+│   │   ├── embedded_files.hpp [auto generated]
+│   │   ├── filesserver.cpp
+│   │   ├── filesserver.hpp
+│   │   ├── https_server.cpp
+│   │   ├── idf_component.yml
 │   │   ├── Kconfig
-│   │   ├── network.cpp
-│   │   └── README.md
-│   └── webserver/
+│   │   ├── README.md
+│   │   ├── restserver.cpp
+│   │   ├── routes.cpp
+│   │   ├── routes.hpp
+│   │   ├── webserver.cpp
+│   │   ├── webserver.hpp
+│   │   └── websocket_server.cpp
+│   └── network/
 │       ├── include/ 
-│       │   ├── embedded_files.hpp [auto generated]
-│       │   ├── routes.hpp
-│       │   └── webserver.hpp
-│       ├── www/
-│       │   ├── assets/
-│       │   │   ├── app.js
-│       │   │   └── index.css
-│       │   └── index.html
-│       ├── .gitignore
+│       │   └── network.hpp
 │       ├── CMakeLists.txt
+│       ├── ethernet_network.cpp
+│       ├── ethernet_network.hpp
+│       ├── idf_component.yml
 │       ├── Kconfig
+│       ├── network.cpp
 │       ├── README.md
-│       ├── routes.cpp
-│       └── webserver.cpp
+│       ├── wifi_network.cpp
+│       └── wifi_network.hpp
 ├── main/
 │   ├── CMakeLists.txt
 │   ├── Kconfig.projbuild

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-CERT_DIR="$(git rev-parse --show-toplevel)/Software/components/webserver/certs"
+CERT_DIR="$(git rev-parse --show-toplevel)/Software/components/https_server/certs"
 KEY="$CERT_DIR/server_key.pem"
 CERT="$CERT_DIR/server_cert.pem"
 CONF="$CERT_DIR/server_cert.conf"

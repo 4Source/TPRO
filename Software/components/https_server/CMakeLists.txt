@@ -1,5 +1,7 @@
 # Set source files and include directories
 set(srcs 
+        fileserver.cpp
+        https_server.cpp
         webserver.cpp
         websocket_server.cpp
         routes.cpp
@@ -11,7 +13,8 @@ set(requires
         network
         led
         apis
-        config_manager)
+        config_manager
+        file_manager)
 set(embed)
 set(embed_txt)
 
@@ -50,11 +53,11 @@ foreach(FILE IN LISTS cert_files)
     endif()
 endforeach()
 
-message(STATUS "Configure webserver component: ")
+message(STATUS "Configure https_server component: ")
 
 # Create auto generated header for embed files 
 message(STATUS "\tCreate embedded files header: ")
-set(EMBED_HEADER "${COMPONENT_DIR}/include/embedded_files.hpp")
+set(EMBED_HEADER "${COMPONENT_DIR}/embedded_files.hpp")
 set(CLANG_IGNORE "readability-identifier-naming, cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-interfaces-global-init")
 file(WRITE ${EMBED_HEADER} "#pragma once \n#include <cstddef>\n\n// Auto-generated file\n\n// NOLINTBEGIN(${CLANG_IGNORE})\n\n")
 foreach(FILE IN LISTS embed embed_txt)
@@ -83,7 +86,7 @@ endforeach()
 file(APPEND ${EMBED_HEADER} "// NOLINTEND(${CLANG_IGNORE})\n")
 
 # Register the component
-message(STATUS "\tRegister webserver component with:")
+message(STATUS "\tRegister https_server component with:")
 message(STATUS "\t\tSource: ${srcs}")
 message(STATUS "\t\tInclude: ${include_dirs}")
 message(STATUS "\t\tRequires: ${requires}")
@@ -94,4 +97,4 @@ idf_component_register(SRCS ${srcs}
                        EMBED_FILES ${embed}
                        EMBED_TXTFILES ${embed_txt})
 
-message(STATUS "Configure webserver component done")
+message(STATUS "Configure https_server component done")

@@ -13,6 +13,9 @@ export function Header() {
 				<a href="/simulation" class={url == '/simulation' && 'active'}>
 					Simulation
 				</a>
+				<a href="/browser" class={url == '/browser' && 'active'}>
+					File Server
+				</a>
 				<a href="/about" class={url == '/about' && 'active'}>
 					About
 				</a>

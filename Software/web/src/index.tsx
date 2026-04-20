@@ -7,6 +7,7 @@ import { About } from './pages/About/index';
 import { Simulation } from './pages/Simulation';
 import { NotFound } from './pages/_404';
 import './style.css';
+import { Files } from './pages/Files';
 
 export function App() {
 	return (
@@ -17,6 +18,7 @@ export function App() {
 					<Route path="/" component={Home} />
 					<Route path="/about" component={About} />
 					<Route path="/simulation" component={Simulation} />
+					<Route path="/browser" component={Files} />
 					<Route default component={NotFound} />
 				</Router>
 			</main>

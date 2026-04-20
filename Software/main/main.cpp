@@ -1,11 +1,11 @@
 #include "blinking_effect.hpp"
 #include "config_manager.hpp"
 #include "file_manager.hpp"
+#include "https_server.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
 #include "restserver.hpp"
 #include "timeserver.hpp"
-#include "webserver.hpp"
 #include "websocket_server.hpp"
 #include <esp_log.h>
 #include <esp_wifi.h>
@@ -39,15 +39,15 @@ static void init_nvs_storage() {
 }
 
 /*
- * This helper function configures the webserver and websocket server.
+ * This helper function configures the websocket server.
  */
 static void handle_websocket_state(httpd_handle_t handle) {
 	if (handle != nullptr) {
-		ESP_LOGI(kTag, "Webserver handle received, starting WebSocket...");
+		ESP_LOGI(kTag, "HTTPs server handle received, starting WebSocket...");
 		g_ws_server.emplace(handle, main_frame);
 		g_ws_server->run();
 	} else {
-		ESP_LOGW(kTag, "Webserver handle lost, stopping WebSocket...");
+		ESP_LOGW(kTag, "HTTPs server handle lost, stopping WebSocket...");
 		if (g_ws_server.has_value()) {
 			g_ws_server->stop();
 			g_ws_server.reset();
@@ -86,9 +86,9 @@ extern "C" void app_main(void) {
 	ESP_ERROR_CHECK(Network::init());
 
 	/**
-	 * This helper function starts the webserver
+	 * This helper function configures the HTTPs server
 	 */
-	ESP_ERROR_CHECK(Webserver::init([&](httpd_handle_t handle) {
+	ESP_ERROR_CHECK(HttpsServer::init([&](httpd_handle_t handle) {
 		handle_websocket_state(handle);
 		RestServer::init(main_config, handle);
 	}));

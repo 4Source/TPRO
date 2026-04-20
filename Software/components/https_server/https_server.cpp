@@ -1,4 +1,4 @@
-#include "webserver.hpp"
+#include "https_server.hpp"
 #include "embedded_files.hpp"
 #include "routes.hpp"
 #include <cstring>
@@ -19,18 +19,18 @@
 // NOLINTEND(cppcoreguidelines-macro-usage)
 #endif
 
-httpd_handle_t Webserver::g_https_server_handle = nullptr;
+httpd_handle_t HttpsServer::g_https_server_handle = nullptr;
 
-std::function<void(httpd_handle_t)> Webserver::g_state_callback = nullptr;
+std::function<void(httpd_handle_t)> HttpsServer::g_state_callback = nullptr;
 
-esp_err_t Webserver::init(const std::function<void(httpd_handle_t)> &callback) {
+esp_err_t HttpsServer::init(const std::function<void(httpd_handle_t)> &callback) {
 	esp_err_t ret = ESP_ERR_INVALID_STATE;
-	ESP_LOGI(kTag, "Initializing webserver events...");
+	ESP_LOGI(kTag, "Initializing HTTPs server events...");
 	g_state_callback = callback;
 
 #if CONFIG_LISTEN_ETHERNET
 	ret = ESP_OK;
-	ESP_LOGI(kTag, "Webserver listening to ethernet connection...");
+	ESP_LOGI(kTag, "HTTPs server listening to ethernet connection...");
 	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, nullptr), kTag,
 						"Failed to register Ethernet connect handler");
 	ESP_RETURN_ON_ERROR(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, nullptr), kTag,
@@ -38,7 +38,7 @@ esp_err_t Webserver::init(const std::function<void(httpd_handle_t)> &callback) {
 #endif
 #if CONFIG_LISTEN_WIFI
 	ret = ESP_OK;
-	ESP_LOGI(kTag, "Webserver listening to wifi connection...");
+	ESP_LOGI(kTag, "HTTPs server listening to wifi connection...");
 	ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, nullptr), kTag,
 						"Failed to register WiFi connect handler");
 	ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, nullptr), kTag,
@@ -54,7 +54,7 @@ esp_err_t Webserver::init(const std::function<void(httpd_handle_t)> &callback) {
 	return ret;
 }
 
-void Webserver::log_active_socket_connections() {
+void HttpsServer::log_active_socket_connections() {
 	size_t https_fds = kMaxSockets;
 	std::array<int, kMaxSockets> https_client_fds;
 	httpd_get_client_list(g_https_server_handle, &https_fds, https_client_fds.data());
@@ -69,8 +69,8 @@ void Webserver::log_active_socket_connections() {
 	}
 }
 
-void Webserver::connect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
-	ESP_LOGI(kTag, "Starting server");
+void HttpsServer::connect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
+	ESP_LOGI(kTag, "Starting HTTPs server");
 
 	// https server
 	httpd_ssl_config_t https_config = HTTPD_SSL_CONFIG_DEFAULT();
@@ -85,8 +85,8 @@ void Webserver::connect_handler(void *arg_0, esp_event_base_t event_base, int32_
 	https_config.httpd.max_open_sockets = kMaxSockets;
 	// Close least recently used connection: when connection requested but max_open_sockets already reached
 	https_config.httpd.lru_purge_enable = true;
-
-	https_config.httpd.max_uri_handlers = 10; // default is 8 but we have more routes to register
+	// Automatically set the correct amount of uri handlers
+	https_config.httpd.max_uri_handlers = get_number_of_https_routes();
 
 	if (httpd_ssl_start(&g_https_server_handle, &https_config) == ESP_OK) {
 		register_https_routes(g_https_server_handle);
@@ -97,9 +97,9 @@ void Webserver::connect_handler(void *arg_0, esp_event_base_t event_base, int32_
 	}
 }
 
-void Webserver::disconnect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
-	// TODO: Maybe if both (ethernet/wifi) are connected the disconnect_handler should not stop the webserver
-	ESP_LOGI(kTag, "Server stopping...");
+void HttpsServer::disconnect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1) {
+	// TODO: Maybe if both (ethernet/wifi) are connected the disconnect_handler should not stop the HTTPs server
+	ESP_LOGI(kTag, "HTTPs server stopping...");
 
 	// Melldung
 	if (g_state_callback) {
@@ -112,7 +112,7 @@ void Webserver::disconnect_handler(void *arg_0, esp_event_base_t event_base, int
 	}
 }
 
-void Webserver::event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void HttpsServer::event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
 	if (event_base == ESP_HTTPS_SERVER_EVENT) {
 		switch (event_id) {
 		case HTTPS_SERVER_EVENT_ERROR:
@@ -177,69 +177,69 @@ void Webserver::event_handler(void *arg, esp_event_base_t event_base, int32_t ev
 	}
 }
 
-void Webserver::handle_https_server_error(esp_https_server_last_error_t *event) {
+void HttpsServer::handle_https_server_error(esp_https_server_last_error_t *event) {
 	ESP_LOGE(kTag, "Error event triggered: last_error = %s, last_tls_err = %d, tls_flag = %d", esp_err_to_name(event->last_error),
 			 event->esp_tls_error_code, event->esp_tls_flags);
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_https_server_start() {
+void HttpsServer::handle_https_server_start() {
 	ESP_LOGI(kTag, "HTTPs server start");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_https_server_connected() {
+void HttpsServer::handle_https_server_connected() {
 	ESP_LOGI(kTag, "HTTPs server connected");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_https_server_data(int *event) { ESP_LOGD(kTag, "HTTPs server data %d", event); }
+void HttpsServer::handle_https_server_data(int *event) { ESP_LOGD(kTag, "HTTPs server data %d", event); }
 
-void Webserver::handle_https_server_sent_data() { ESP_LOGD(kTag, "HTTPs server sent data"); }
+void HttpsServer::handle_https_server_sent_data() { ESP_LOGD(kTag, "HTTPs server sent data"); }
 
-void Webserver::handle_https_server_disconnected() {
+void HttpsServer::handle_https_server_disconnected() {
 	ESP_LOGI(kTag, "HTTPs server disconnected");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_https_server_stop() {
+void HttpsServer::handle_https_server_stop() {
 	ESP_LOGI(kTag, "HTTPs server stop");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_http_server_error(httpd_err_code_t *event) {
+void HttpsServer::handle_http_server_error(httpd_err_code_t *event) {
 	ESP_LOGE(kTag, "Error event triggered: %d", event);
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_http_server_start() {
+void HttpsServer::handle_http_server_start() {
 	ESP_LOGI(kTag, "HTTP server start");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_http_server_connected(int *event) {
+void HttpsServer::handle_http_server_connected(int *event) {
 	ESP_LOGI(kTag, "HTTP server connected %d", event);
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_http_server_header(int *event) { ESP_LOGD(kTag, "HTTP server header %d", event); }
+void HttpsServer::handle_http_server_header(int *event) { ESP_LOGD(kTag, "HTTP server header %d", event); }
 
-void Webserver::handle_http_server_headers_sent(int *event) { ESP_LOGD(kTag, "HTTP server headers sent %d", event); }
+void HttpsServer::handle_http_server_headers_sent(int *event) { ESP_LOGD(kTag, "HTTP server headers sent %d", event); }
 
-void Webserver::handle_http_server_data(esp_http_server_event_data *event) {
+void HttpsServer::handle_http_server_data(esp_http_server_event_data *event) {
 	ESP_LOGD(kTag, "HTTP server data, fd=%d len=%d", event->fd, event->data_len);
 }
 
-void Webserver::handle_http_server_sent_data(esp_http_server_event_data *event) {
+void HttpsServer::handle_http_server_sent_data(esp_http_server_event_data *event) {
 	ESP_LOGD(kTag, "HTTP server sent data, fd=%d len=%d", event->fd, event->data_len);
 }
 
-void Webserver::handle_http_server_disconnected(int *event) {
+void HttpsServer::handle_http_server_disconnected(int *event) {
 	ESP_LOGI(kTag, "HTTP server disconnected %d", event);
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
 
-void Webserver::handle_http_server_stop() {
+void HttpsServer::handle_http_server_stop() {
 	ESP_LOGI(kTag, "HTTP server stop");
-	Webserver::log_active_socket_connections();
+	HttpsServer::log_active_socket_connections();
 }
