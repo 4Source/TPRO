@@ -2,25 +2,30 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "concurrently --names 'api,vite' 'npm run dev-api' 'npm run dev-web'",
+		"dev-web": "vite",
+		"dev-api": "mock-json-server api-mock.json",
 		"build": "vite build",
 		"lint": "eslint .",
 		"lint-fix": "eslint . --fix",
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"lucide-preact": "^1.8.0",
 		"preact": "^10.26.9",
 		"preact-iso": "^2.11.1"
 	},
 	"devDependencies": {
+		"@preact/preset-vite": "^2.10.2",
 		"@stylistic/eslint-plugin": "^5.10.0",
+		"@tailwindcss/postcss": "^4.2.2",
 		"@typescript-eslint/eslint-plugin": "^8.58.0",
 		"@typescript-eslint/parser": "^8.58.0",
-		"@preact/preset-vite": "^2.10.2",
-		"@tailwindcss/postcss": "^4.2.2",
 		"autoprefixer": "^10.4.27",
+		"concurrently": "^9.2.1",
 		"eslint": "^9.39.4",
 		"eslint-config-preact": "^2.0.0",
+		"mock-json-server": "^1.3.6",
 		"postcss": "^8.5.8",
 		"tailwindcss": "^4.2.2",
 		"typescript": "^6.0.2",

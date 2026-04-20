@@ -1,0 +1,14 @@
+.Files section {
+	margin-top: 5rem;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	column-gap: 1.5rem;
+}
+
+@media (max-width: 639px) {
+	.Files section {
+		margin-top: 5rem;
+		grid-template-columns: 1fr;
+		row-gap: 1rem;
+	}
+}

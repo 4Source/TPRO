@@ -4,10 +4,10 @@
 #include <esp_https_server.h>
 #include <functional>
 
-class Webserver {
+class HttpsServer {
   public:
 	/**
-	 * Registers event handlers to network connections WiFi and/or Ethernet which start the webserver if successfully created a connection.
+	 * Registers event handlers to network connections WiFi and/or Ethernet which start the HTTPs server if successfully created a connection.
 	 *
 	 * @retval - `ESP_OK`: Succeed
 	 * @retval - `ESP_ERR_INVALID_STATE`: Neither WiFi nor Ethernet are enabled in menuconfig.
@@ -33,9 +33,36 @@ class Webserver {
 	 */
 	static void log_active_socket_connections();
 
+	/**
+	 * Converts the `httpd_method_t` to the corrsponding string
+	 *
+	 * @param method The method to convert
+	 * @returns The string representation
+	 */
+	static constexpr const char *http_method_to_str(httpd_method_t method) {
+		switch (method) {
+		case HTTP_GET:
+			return "GET";
+		case HTTP_POST:
+			return "POST";
+		case HTTP_PUT:
+			return "PUT";
+		case HTTP_DELETE:
+			return "DELETE";
+		case HTTP_PATCH:
+			return "PATCH";
+		case HTTP_HEAD:
+			return "HEAD";
+		case HTTP_OPTIONS:
+			return "OPTIONS";
+		default:
+			return "UNKNOWN";
+		}
+	}
+
   private:
 	/**
-	 * Event handler for got IP events. When a got IP event is received this handler will start the webserver
+	 * Event handler for got IP events. When a got IP event is received this handler will start the HTTPs server
 	 *
 	 * This function is registered to the `default event loop` and is called whenever an event is posted to the specified event bases.
 	 *
@@ -51,7 +78,7 @@ class Webserver {
 	static void connect_handler(void *arg_0, esp_event_base_t event_base, int32_t event_id, void *arg_1);
 
 	/**
-	 * Event handler for disconnected events. When a disconnected event is received this handler will stop the webserver
+	 * Event handler for disconnected events. When a disconnected event is received this handler will stop the HTTPs server
 	 *
 	 * This function is registered to the `default event loop` and is called whenever an event is posted to the specified event bases.
 	 *
@@ -149,7 +176,7 @@ class Webserver {
 	 */
 	static void handle_http_server_stop();
 
-	static constexpr const char *kTag = "webserver";
+	static constexpr const char *kTag = "https-server";
 	static std::function<void(httpd_handle_t)> g_state_callback;
 	static httpd_handle_t g_https_server_handle;
 	static constexpr size_t kMaxSockets = CONFIG_LWIP_MAX_SOCKETS - 3;

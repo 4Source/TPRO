@@ -115,7 +115,7 @@
         {
             "label": "Generate HTTPS Cert",
             "type": "shell",
-            "command": "$(git rev-parse --show-toplevel)/Software/components/webserver/certs/generate.sh"
+            "command": "$(git rev-parse --show-toplevel)/Software/components/https_server/certs/generate.sh"
         }
     ]
 }

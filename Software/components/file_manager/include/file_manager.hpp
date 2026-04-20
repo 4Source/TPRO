@@ -1,7 +1,12 @@
 #pragma once
 
+#include <driver/spi_common.h>
 #include <esp_err.h>
+#include <esp_log.h>
+#include <fstream>
+#include <functional>
 #include <optional>
+#include <sdmmc_cmd.h>
 #include <string>
 #include <vector>
 
@@ -31,12 +36,56 @@ class FileManager {
 	static esp_err_t save_file(const std::string &filename, const std::string &content);
 
 	/**
-	 * @brief Read the contents of a file.
+	 * @brief Append the given content to a file.
+	 *
+	 * @param filename Name of the file (e.g. "/sdcard/config.json").
+	 *                 If it does not start with "/", "/sdcard/" will be prepended.
+	 * @param content String to write to the end of the file.
+	 * @return ESP_OK if successful, ESP_FAIL otherwise.
+	 */
+	static esp_err_t append_file(const std::string &filename, const std::string &content);
+
+	/**
+	 * @brief Read the content of a file.
 	 *
 	 * @param filename File name.
 	 * @return std::optional<std::string> String containing file content, or std::nullopt if reading failed.
 	 */
 	static std::optional<std::string> read_file(const std::string &filename);
+
+	/**
+	 * @brief Read of the content of a file in chunks passes it to the 'on_chunk' lambda for processing.
+	 *
+	 * @param filename File name.
+	 * @param on_chunk The method which is called to receive the next chunk.
+	 * @retval - `ESP_OK`: Successful
+	 * @retval - `ESP_FAIL`: When failed to open the file
+	 * @retval - `other`: when lambda returns error the error is passed through
+	 */
+	template <size_t N> static esp_err_t read_file_chunked(const std::string &filename, const std::function<esp_err_t(const char *, int)> &on_chunk) {
+		std::string path = resolve_path(filename);
+		ESP_LOGI(kTAG, "Reading chunked file: %s", path.c_str());
+
+		std::ifstream file(path);
+		if (!file.is_open()) {
+			ESP_LOGE(kTAG, "Failed to open file for reading: %s", path.c_str());
+			return ESP_FAIL;
+		}
+
+		std::array<char, N> buffer;
+		while (file) {
+			file.read(buffer.data(), N);
+			std::streamsize read_count = file.gcount();
+			if (read_count > 0) {
+				esp_err_t err = on_chunk(buffer.data(), static_cast<int>(read_count));
+				if (err != ESP_OK) {
+					return err;
+				}
+			}
+		}
+
+		return ESP_OK;
+	}
 
 	/**
 	 * @brief Delete a configuration file.
@@ -55,10 +104,42 @@ class FileManager {
 	static std::vector<std::string> list_directory(const std::string &directory_path);
 
 	/**
+	 * @brief Check if file path points to a file that is existing.
+	 *
+	 * @param file_path The path to the files to check
+	 * @retval - `ESP_OK`: if the path is a file that does exists
+	 * @retval - `ESP_FAIL`: if the path is a file that does NOT exists
+	 */
+	static esp_err_t is_file(const std::string &file_path);
+
+	/**
+	 * @brief Check if path is a existing directory.
+	 *
+	 * @param directory_path The path to check
+	 * @retval - `ESP_OK`: if the path is a directory that does exists
+	 * @retval - `ESP_FAIL`: if the path is a directory that does NOT exists
+	 */
+	static esp_err_t is_directory(const std::string &directory_path);
+
+	/**
 	 * @brief Run an internal test to verify saving, reading, and deleting a file.
 	 *        Call this from app_main to test in a real environment.
 	 *
 	 * @return ESP_OK if all tests pass, ESP_FAIL otherwise.
 	 */
 	static esp_err_t run_selftest();
+
+  private:
+	/**
+	 * @brief Ensures the path starts with the mount point
+	 *
+	 * @param path The path to use
+	 * @return The file path on the SD Card
+	 */
+	static std::string resolve_path(const std::string &path);
+
+	static constexpr const char *kTAG = "file-manager";
+	static constexpr const char *kMountPoint = "/sdcard";
+	static sdmmc_card_t *card;
+	static spi_host_device_t host_slot;
 };

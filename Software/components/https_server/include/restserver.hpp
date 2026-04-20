@@ -9,7 +9,6 @@ class RestServer {
   public:
 	inline static httpd_handle_t httpd_server;
 	inline static ConfigManager *my_config_manager = nullptr;
-	RestServer(httpd_handle_t server, ConfigManager config_manager);
 
 	// GET returns value.
 	// example /config?speed

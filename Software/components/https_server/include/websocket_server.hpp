@@ -7,7 +7,7 @@ class WebsocketServer {
   public:
 	/**
 	 * @brief Konstruktor für den Websocket Server
-	 * @param server Der ESP-IDF httpd_handle_t deines Webservers
+	 * @param server Der ESP-IDF httpd_handle_t des HTTPs server
 	 * @param frame Referenz auf das zentrale LedFrame
 	 */
 	WebsocketServer(httpd_handle_t server, LedFrame &frame);

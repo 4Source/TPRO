@@ -1,6 +1,6 @@
 # Testspezifische Sources
 set(MANAGER_SOURCES
-    ${CMAKE_SOURCE_DIR}/../components/webserver/websocket_server.cpp
+    ${CMAKE_SOURCE_DIR}/../components/https_server/websocket_server.cpp
     ${CMAKE_SOURCE_DIR}/mocks.cpp
 )
 
@@ -11,7 +11,7 @@ target_compile_definitions(test_websocket_server PRIVATE UNIT_TEST)
 # Testspezifische Includes
 target_include_directories(test_websocket_server PRIVATE 
     ${CMAKE_SOURCE_DIR}/mock_esp
-    ${CMAKE_SOURCE_DIR}/../components/webserver/include
+    ${CMAKE_SOURCE_DIR}/../components/https_server/include
     ${CMAKE_SOURCE_DIR}/../components/led/include
     ${CMAKE_SOURCE_DIR}/../components/task_handles/include
 )

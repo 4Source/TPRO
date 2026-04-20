@@ -1,32 +1,22 @@
 #include "file_manager.hpp"
 
 #include <dirent.h>
-#include <fstream>
+#include <driver/sdspi_host.h>
+#include <esp_timer.h>
+#include <esp_vfs_fat.h>
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include <driver/sdspi_host.h>
-#include <driver/spi_common.h>
-#include <esp_log.h>
-#include <esp_timer.h>
-#include <esp_vfs_fat.h>
-#include <sdmmc_cmd.h>
 
 #define SD_PIN_CS GPIO_NUM_4
 #define SD_PIN_MISO GPIO_NUM_5
 #define SD_PIN_MOSI GPIO_NUM_6
 #define SD_PIN_CLK GPIO_NUM_7
 
-static constexpr const char *kTAG = "FileManager";
-static constexpr const char *kMountPoint = "/sdcard";
+sdmmc_card_t *FileManager::card = nullptr;
+spi_host_device_t FileManager::host_slot = SPI3_HOST;
 
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-static sdmmc_card_t *card = nullptr;
-static spi_host_device_t host_slot = SPI3_HOST;
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
-
-static std::string resolve_path(const std::string &path) {
+std::string FileManager::resolve_path(const std::string &path) {
 	if (path.empty() || path == "/") {
 		return kMountPoint;
 	}
@@ -136,7 +126,23 @@ esp_err_t FileManager::save_file(const std::string &filename, const std::string 
 
 	std::ofstream file(path);
 	if (!file.is_open()) {
-		ESP_LOGE(kTAG, "Failed to open file for writing: %s", path.c_str());
+		ESP_LOGE(kTAG, "Failed to open file for saving: %s", path.c_str());
+		return ESP_FAIL;
+	}
+
+	file << content;
+	file.close();
+
+	return file.good() ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t FileManager::append_file(const std::string &filename, const std::string &content) {
+	std::string path = resolve_path(filename);
+	ESP_LOGI(kTAG, "Appending file: %s", path.c_str());
+
+	std::ofstream file(path, std::ios::out | std::ios::app);
+	if (!file.is_open()) {
+		ESP_LOGE(kTAG, "Failed to open file for appending: %s", path.c_str());
 		return ESP_FAIL;
 	}
 
@@ -204,6 +210,50 @@ std::vector<std::string> FileManager::list_directory(const std::string &director
 	return files;
 }
 
+esp_err_t FileManager::is_file(const std::string &file_path) {
+	std::string path = resolve_path(file_path);
+	if (path.empty()) {
+		ESP_LOGE(kTAG, "Empty path");
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	ESP_LOGI(kTAG, "Check is file: %s", path.c_str());
+
+	struct stat status;
+
+	if (stat(path.c_str(), &status) != 0) {
+		return ESP_FAIL;
+	}
+
+	if (!S_ISREG(status.st_mode)) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+esp_err_t FileManager::is_directory(const std::string &directory_path) {
+	std::string path = resolve_path(directory_path);
+	if (path.empty()) {
+		ESP_LOGE(kTAG, "Empty path");
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	ESP_LOGI(kTAG, "Check is directory: %s", path.c_str());
+
+	struct stat status;
+
+	if (stat(path.c_str(), &status) != 0) {
+		return ESP_FAIL;
+	}
+
+	if (!S_ISDIR(status.st_mode)) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
 esp_err_t FileManager::run_selftest() {
 	ESP_LOGI(kTAG, "--- Starting FileManager Selftest ---");
 	if (mount() != ESP_OK) {
@@ -219,9 +269,24 @@ esp_err_t FileManager::run_selftest() {
 		return ESP_FAIL;
 	}
 
+	if (is_file(test_file) != ESP_OK) {
+		ESP_LOGE(kTAG, "Selftest failed: File not found which should exist");
+		return ESP_FAIL;
+	}
+
 	auto content = read_file(test_file);
 	if (!content.has_value() || content.value() != test_content) {
 		ESP_LOGE(kTAG, "Selftest failed: Read content does not match.");
+		return ESP_FAIL;
+	}
+
+	if (is_directory("/") != ESP_OK) {
+		ESP_LOGE(kTAG, "Selftest failed: Directory not found which should exist");
+		return ESP_FAIL;
+	}
+
+	if (is_directory("/test/") == ESP_OK) {
+		ESP_LOGE(kTAG, "Selftest failed: Found directory which should not exist");
 		return ESP_FAIL;
 	}
 
@@ -241,6 +306,11 @@ esp_err_t FileManager::run_selftest() {
 
 	if (delete_file(test_file) != ESP_OK) {
 		ESP_LOGE(kTAG, "Selftest failed: Could not delete file.");
+		return ESP_FAIL;
+	}
+
+	if (is_file(test_file) == ESP_OK) {
+		ESP_LOGE(kTAG, "Selftest failed: Found file which should not exist");
 		return ESP_FAIL;
 	}
 
