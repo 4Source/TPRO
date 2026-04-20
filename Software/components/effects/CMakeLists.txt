@@ -7,8 +7,10 @@ set(srcs
 set(include_dirs include) #effects.hpp
 set(requires 
         espressif__json_parser 
+        espressif__cjson
         led
-        time)
+        time
+        file_manager)
 
 message(STATUS "Configure effects component: ")
 

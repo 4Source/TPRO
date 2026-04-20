@@ -1,11 +1,22 @@
 #pragma once
 #include "effect.hpp"
+#include <map>
 
 // Jeder Effekt im vektor _subeffects hat eine cycle time
 struct TimelineStep {
-	std::unique_ptr<Effect> effect;
+	std::shared_ptr<Effect> effect;
 	uint32_t duration_ms;
 	uint32_t start_ms;
+};
+struct TimelineSecondaryItem {
+	uint32_t id;
+	uint32_t cycle_time;
+	// Map für n beliebige Key-Value Paare
+	std::map<std::string, std::string> overwrites;
+};
+struct TimelineSubeffectConfig {
+	std::string type;
+	std::string path;
 };
 
 /// @brief Spezieller Effect: Timeline aus n verschiedenen Sub-Effekten
@@ -23,22 +34,35 @@ class TimelineEffect : public Effect {
 
 	std::unique_ptr<LedFrame> get_led_data(DateTime time) override;
 
-	esp_err_t serialize(const char *path) override;
-	esp_err_t deserialize(const char *path) override;
+	esp_err_t serialize(std::string path) override;
+	esp_err_t deserialize(std::string path) override;
 
 	esp_err_t set_parameter(const char *name, const char *value) override;
 
-	esp_err_t set_filepath(const char *path) override;
+	esp_err_t set_filepath(std::string path) override;
 	std::string get_filepath() override;
 
+	// Pure Getter - keine internen veränderungen!
+	[[nodiscard]] const std::vector<std::shared_ptr<Effect>> &get_subeffects() const;
+
   private:
-	std::vector<Effect *> _subeffects;
-	std::vector<std::pair<std::string, std::string>> _overwrites; // Key Value pairs für überschreiben von Sub-Effekt Parametern
-	std::string _path;
-	std::array<char, 128> _path_buffer;
-	std::vector<TimelineStep> _steps;
-	uint32_t _total_duration_ms = 0;
+	std::vector<std::shared_ptr<Effect>> subeffects_;
+	std::vector<std::pair<std::string, std::string>> overwrites_; // Key Value pairs für überschreiben von Sub-Effekt Parametern
+	std::string path_;
+	std::array<char, 128> path_buffer_;
+	std::vector<TimelineStep> steps_;
+	uint32_t total_duration_ms_{0};
+	std::vector<TimelineSubeffectConfig> subeffect_configs_;
+	std::vector<TimelineSecondaryItem> secondary_items_;
+	uint32_t primary_cycle_time_{0};
+	uint32_t primary_id_{0};
+	std::string name_{"Timeline Effect"};
+
 	esp_err_t delete_subeffect(Effect *effect);
-	esp_err_t set_subeffect(Effect *effect);
-	std::vector<Effect *> &get_subeffects();
+	esp_err_t set_subeffect(const std::shared_ptr<Effect> &effect);
+	esp_err_t initialize_subeffects(); // init subeffects aus subeffect_configs
+
+	// json helper
+	esp_err_t parse_static_fields(jparse_ctx_t *jctx);
+	esp_err_t parse_dynamic_secondary(const char *raw_json);
 };

@@ -1,4 +1,5 @@
 #include "file_manager.hpp"
+#include "default_configs.hpp"
 
 #include <dirent.h>
 #include <driver/sdspi_host.h>
@@ -31,6 +32,33 @@ std::string FileManager::resolve_path(const std::string &path) {
 	return std::string(kMountPoint) + "/" + path;
 }
 
+esp_err_t FileManager::ensure_directories(const std::string &path) {
+	std::string temp = path;
+	size_t last_slash = temp.find_last_of('/');
+
+	if (last_slash == std::string::npos) {
+		return ESP_OK;
+	}
+	temp = temp.substr(0, last_slash);
+
+	std::string current_path;
+	std::stringstream sub_string(temp);
+	std::string segment;
+
+	while (std::getline(sub_string, segment, '/')) {
+		if (segment.empty()) {
+			continue;
+		}
+		current_path += "/" + segment;
+
+		if (mkdir(current_path.c_str(), 0755) != 0 && errno != EEXIST) {
+			ESP_LOGE(kTAG, "mkdir failed: %s (errno: %d)", current_path.c_str(), errno);
+			return ESP_FAIL;
+		}
+	}
+	return ESP_OK;
+}
+
 esp_err_t FileManager::mount() {
 
 	if (card != nullptr) {
@@ -52,7 +80,7 @@ esp_err_t FileManager::mount() {
 	host.slot = SPI3_HOST; // SPI3 nutzen 1&2 werden wohl von ethernet belegt
 	host_slot = static_cast<spi_host_device_t>(host.slot);
 
-	// 2. Bus Config mit deinen Pins
+	// Bus configuration für SPI3
 	spi_bus_config_t bus_cfg = {.mosi_io_num = SD_PIN_MOSI,
 								.miso_io_num = SD_PIN_MISO,
 								.sclk_io_num = SD_PIN_CLK,
@@ -122,6 +150,12 @@ esp_err_t FileManager::unmount() {
 
 esp_err_t FileManager::save_file(const std::string &filename, const std::string &content) {
 	std::string path = resolve_path(filename);
+
+	if (ensure_directories(path) != ESP_OK) {
+		ESP_LOGE(kTAG, "Failed to ensure directories for path: %s", path.c_str());
+		return ESP_FAIL;
+	}
+
 	ESP_LOGI(kTAG, "Saving file: %s", path.c_str());
 
 	std::ofstream file(path);
@@ -315,5 +349,40 @@ esp_err_t FileManager::run_selftest() {
 	}
 
 	ESP_LOGI(kTAG, "--- FileManager Selftest Passed ---");
+	return ESP_OK;
+}
+
+esp_err_t FileManager::write_default_configs() {
+	// Default configs auf sd karte schreiben
+	std::vector<std::pair<std::string, std::string>> default_configs = {
+		{DefaultConfigs::kDefaultDayNightConfigPath, DefaultConfigs::kDefaultDayNightConfig},
+		{DefaultConfigs::kDefaultBlinkConfigPath, DefaultConfigs::kDefaultBlinkConfig},
+		{DefaultConfigs::kDefaultTimelineConfigPath, DefaultConfigs::kDefaultTimelineConfig},
+	};
+
+	for (const auto &[path, content] : default_configs) {
+		if (save_file(path, content) != ESP_OK) {
+			ESP_LOGE(kTAG, "Failed to write default config: %s", path.c_str());
+			return ESP_FAIL;
+		}
+	}
+	return ESP_OK;
+}
+
+esp_err_t FileManager::print_default_configs() {
+	std::vector<std::string> config_paths = {
+		DefaultConfigs::kDefaultDayNightConfigPath,
+		DefaultConfigs::kDefaultBlinkConfigPath,
+		DefaultConfigs::kDefaultTimelineConfigPath,
+	};
+
+	for (const auto &path : config_paths) {
+		auto content = read_file(path);
+		if (!content.has_value()) {
+			ESP_LOGE(kTAG, "Failed to read default config: %s", path.c_str());
+			return ESP_FAIL;
+		}
+		ESP_LOGI(kTAG, "Content of %s:\n%s", resolve_path(path).c_str(), content.value().c_str());
+	}
 	return ESP_OK;
 }

@@ -2,11 +2,17 @@
 // include json parser
 // https://github.com/espressif/json_parser/blob/master/include/json_parser.h
 // Für JSON Serialisierung/Deserialisierung der Effekte
+#include "cJSON.h"
 #include <cstring>
 #include <esp_err.h>
 #include <json_parser.h>
+#include <memory>
 
 struct EffectParser {
+	// RAII Wrappers for cJSON
+	using cJSON_ptr = std::unique_ptr<cJSON, decltype(&cJSON_Delete)>;
+	using cJSON_str_ptr = std::unique_ptr<char, decltype(&free)>;
+
 	// Diese Funktion übernimmt das Standard-Parsing (für sämtliche Effekte
 	// identisch) und ruft dann die spezifische Logik auf
 	template <typename F>

@@ -1,7 +1,7 @@
 #pragma once
-// TODO #include "FileManager.hpp"
 #include "datetime.hpp"
 #include "effect_parser.hpp"
+#include "file_manager.hpp"
 #include "led_frame.hpp"
 #include <cstdint>
 #include <esp_err.h>
@@ -21,10 +21,10 @@ class Effect {
 
 	virtual std::unique_ptr<LedFrame> get_led_data(DateTime time_stamp) = 0; // auf heap legen - zu groß für stack
 
-	virtual esp_err_t serialize(const char *path) = 0;
-	virtual esp_err_t deserialize(const char *path) = 0;
+	virtual esp_err_t serialize(std::string path) = 0;
+	virtual esp_err_t deserialize(std::string path) = 0;
 	virtual esp_err_t set_parameter(const char *name, const char *value) = 0;
 
-	virtual esp_err_t set_filepath(const char *path) = 0;
+	virtual esp_err_t set_filepath(std::string path) = 0;
 	virtual std::string get_filepath() = 0;
 };

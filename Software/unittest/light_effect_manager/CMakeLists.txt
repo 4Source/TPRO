@@ -2,8 +2,13 @@
 set(MANAGER_SOURCES
     ${CMAKE_SOURCE_DIR}/../components/light_effect_manager/light_effect_manager.cpp
     ${CMAKE_SOURCE_DIR}/../components/effects/blinking_effect.cpp 
+    ${CMAKE_SOURCE_DIR}/../components/effects/timeline_effect.cpp 
+    ${CMAKE_SOURCE_DIR}/../components/effects/day_night_effect.cpp 
+    ${CMAKE_SOURCE_DIR}/../components/effects/effect_factory.cpp 
     ${CMAKE_SOURCE_DIR}/../components/config_manager/config_manager.cpp
     ${CMAKE_SOURCE_DIR}/../components/time/datetime.cpp
+    ${CMAKE_SOURCE_DIR}/mocks.cpp
+    
 )
 
 add_executable(test_light_effect_manager test_led_effect_manager.cpp ${MANAGER_SOURCES})

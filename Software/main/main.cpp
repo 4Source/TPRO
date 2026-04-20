@@ -1,5 +1,6 @@
 #include "blinking_effect.hpp"
 #include "config_manager.hpp"
+#include "default_configs.hpp"
 #include "file_manager.hpp"
 #include "https_server.hpp"
 #include "light_effect_manager.hpp"
@@ -101,17 +102,19 @@ extern "C" void app_main(void) {
 
 	init_timeserver();
 
-	// Test Blink
-	BlinkingEffect blink;
-	effect_manager.register_effect(&blink);
-	effect_manager.set_effect(&blink);
-	effect_manager.start();
-
 	// Run Selftest for FileManager
 	if (FileManager::run_selftest() != ESP_OK) {
 		ESP_LOGE("main", "File manager self-test failed");
 		return;
 	}
+	FileManager::write_default_configs();
+	FileManager::print_default_configs();
+
+	// Test Blink
+	auto blink_effect = effect_manager.get_effect(DefaultConfigs::kDefaultBlinkConfigPath);
+	effect_manager.register_effect(blink_effect);
+	effect_manager.set_effect(blink_effect);
+	effect_manager.start();
 
 	while (true) {
 		// Delay to simulate load

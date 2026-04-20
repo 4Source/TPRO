@@ -1,8 +1,8 @@
 #include "effect_factory.hpp"
 #include "effect_parser.hpp"
+#include "file_manager.hpp"
 
 #if defined(UNIT_TEST)
-#include "file_manager.hpp"
 #include <iostream>
 #endif
 
@@ -13,13 +13,16 @@
 #include "day_night_effect.hpp"
 #include "timeline_effect.hpp"
 
-std::unique_ptr<Effect> EffectFactory::generate_from_json(const char *path) {
+std::shared_ptr<Effect> EffectFactory::generate_from_json(std::string path) {
 	type_buffer = {}; // Buffer leeren vor Benutzung
-#if defined(UNIT_TEST)
-	const char *json_text = FileManager::read_file(path);
-#else
-	const char *json_text = nullptr;
-#endif
+	auto opt_json = FileManager::read_file(path);
+
+	if (!opt_json.has_value()) {
+		return nullptr;
+	}
+
+	const char *json_text = opt_json.value().c_str();
+
 	if (json_text == nullptr) {
 		return nullptr;
 	}
@@ -43,14 +46,14 @@ std::unique_ptr<Effect> EffectFactory::generate_from_json(const char *path) {
 	std::cerr << "DEBUG: Extracted type: [" << type_buffer.data() << "]" << std::endl;
 #endif
 
-	std::unique_ptr<Effect> effect = nullptr;
+	std::shared_ptr<Effect> effect = nullptr;
 
 	if (strcmp(type_buffer.data(), "day_night") == 0) {
-		effect = std::make_unique<DayNightEffect>();
-	} else if (strcmp(type_buffer.data(), "blinking") == 0) {
-		effect = std::make_unique<BlinkingEffect>();
+		effect = std::make_shared<DayNightEffect>();
+	} else if (strcmp(type_buffer.data(), "blink") == 0) {
+		effect = std::make_shared<BlinkingEffect>();
 	} else if (strcmp(type_buffer.data(), "timeline") == 0) {
-		effect = std::make_unique<TimelineEffect>();
+		effect = std::make_shared<TimelineEffect>();
 	} else {
 		// Unbekannter Effekt-Typ
 		json_parse_end(&jctx);
@@ -60,7 +63,7 @@ std::unique_ptr<Effect> EffectFactory::generate_from_json(const char *path) {
 	json_parse_end(&jctx);
 
 	if (effect) {
-		effect->deserialize(path);
+		effect->deserialize(std::move(path));
 	}
 
 	return effect;

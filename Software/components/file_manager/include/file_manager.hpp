@@ -129,6 +129,9 @@ class FileManager {
 	 */
 	static esp_err_t run_selftest();
 
+	static esp_err_t write_default_configs();
+	static esp_err_t print_default_configs();
+
   private:
 	/**
 	 * @brief Ensures the path starts with the mount point
@@ -142,4 +145,6 @@ class FileManager {
 	static constexpr const char *kMountPoint = "/sdcard";
 	static sdmmc_card_t *card;
 	static spi_host_device_t host_slot;
+
+	static esp_err_t ensure_directories(const std::string &path);
 };
