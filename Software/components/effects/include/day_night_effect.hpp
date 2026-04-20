@@ -15,16 +15,21 @@ class DayNightEffect : public Effect {
 
 	std::unique_ptr<LedFrame> get_led_data(DateTime time) override;
 
-	esp_err_t serialize(const char *path) override;
-	esp_err_t deserialize(const char *path) override;
+	esp_err_t serialize(std::string path) override;
+	esp_err_t deserialize(std::string path) override;
 
 	esp_err_t set_parameter(const char *name, const char *value) override;
 
-	esp_err_t set_filepath(const char *path) override;
+	esp_err_t set_filepath(std::string path) override;
 	std::string get_filepath() override;
 
   private:
 	static esp_err_t request_api();
-	std::string _path;
-	std::array<char, 128> _path_buffer;
+	std::string path_;
+
+	std::string name_{"Day/Night Effect"};
+	u_int32_t default_speed_{1};
+	u_int8_t default_brightness_{100};
+
+	std::array<char, 128> path_buffer_;
 };

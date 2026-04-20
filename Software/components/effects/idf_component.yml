@@ -6,3 +6,4 @@ dependencies:
     version: '>=6.0'
   ## List of dependencies 
   espressif/json_parser: ^1.0.3
+  espressif/cjson: ^1.7.19~2

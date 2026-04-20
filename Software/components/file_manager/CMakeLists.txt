@@ -2,7 +2,7 @@
 set(srcs 
         file_manager.cpp)
 set(include_dirs include)
-set(requires fatfs sdmmc esp_timer esp_driver_sdspi esp_driver_spi)
+set(requires fatfs sdmmc esp_timer esp_driver_sdspi esp_driver_spi config_manager)
 
 message(STATUS "Configure file-manager component: ")
 

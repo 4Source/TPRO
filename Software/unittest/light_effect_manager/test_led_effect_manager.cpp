@@ -11,9 +11,9 @@ TEST(LightEffectManagerTest, VerifiesExternalFrameUpdate) {
 	LightEffectManager manager(main_frame);
 
 	// Effekt registrieren und setzen
-	BlinkingEffect blink;
-	manager.register_effect(&blink);
-	manager.set_effect(&blink);
+	auto blink = std::make_shared<BlinkingEffect>();
+	manager.register_effect(blink);
+	manager.set_effect(blink);
 
 	// gerade sekunde -> weiß
 	DateTime t_on;

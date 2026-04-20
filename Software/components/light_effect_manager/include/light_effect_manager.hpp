@@ -2,9 +2,12 @@
 
 #include "config_observer.hpp"
 #include "effect.hpp"
+#include "effect_factory.hpp"
 #include "led_frame.hpp"
 
 #include <esp_err.h>
+#include <esp_log.h>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,15 +29,16 @@ class LightEffectManager : public ConfigObserver {
 	LightEffectManager &operator=(LightEffectManager &&) = delete;
 
 	// Effektverwaltung
-	esp_err_t set_effect(Effect *effect);
+	esp_err_t set_effect(const std::shared_ptr<Effect> &effect);
 
 	// Funktioniert nur, wenn der Effekt vorher registriert wurde.
-	esp_err_t set_effect(const char *path);
+	esp_err_t set_effect(const std::string &path);
 
-	esp_err_t register_effect(Effect *effect);
-	esp_err_t unregister_effect(Effect *effect);
+	esp_err_t register_effect(const std::shared_ptr<Effect> &effect);
+	esp_err_t unregister_effect(const std::shared_ptr<Effect> &effect);
 
-	[[nodiscard]] Effect *get_effect() const;
+	// get effect via path when effects doesnt exist create it via factory
+	std::shared_ptr<Effect> get_effect(const std::string &path);
 
 	// Update-Logik
 	esp_err_t run(const DateTime &time_stamp);
@@ -59,11 +63,11 @@ class LightEffectManager : public ConfigObserver {
 	static constexpr const char *kTag = "light-effect-manager";
 	LedFrame &data;
 	ConfigManager *config_manager = nullptr;
-	Effect *current_effect = nullptr;
+	std::shared_ptr<Effect> current_effect = nullptr;
 	float speed = 1.0F;
 	TimeApi *time_api = nullptr; // später nutzen
 
-	std::vector<Effect *> available_effects;
+	std::vector<std::shared_ptr<Effect>> available_effects;
 
 	static void effect_task(void *arg);
 };
