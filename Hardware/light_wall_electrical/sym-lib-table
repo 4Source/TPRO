@@ -1,0 +1,4 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "digi-key") (type "Legacy") (uri "/home/moba/digikey-kicad-library/digikey-symbols/dk_Logic-Buffers-Drivers-Receivers-Transceivers.lib") (options "") (descr ""))
+)
