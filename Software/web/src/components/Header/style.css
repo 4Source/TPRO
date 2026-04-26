@@ -21,12 +21,3 @@ header a.active {
 header a:hover {
 	background-color: #0008;
 }
-
-main {
-	flex: auto;
-	display: flex;
-	align-items: center;
-	max-width: 1280px;
-	margin: 0 auto;
-	text-align: center;
-}
