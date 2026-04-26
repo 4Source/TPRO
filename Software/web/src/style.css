@@ -47,3 +47,15 @@ main {
         background-color: #1a1a1a;
     }
 }
+
+html.page-dark-mode {
+    color: #ccc;
+    background-color: #1a1a1a;
+    color-scheme: dark;
+}
+
+html.page-light-mode {
+    color: #222;
+    background-color: #f8fafc;
+    color-scheme: light;
+}
