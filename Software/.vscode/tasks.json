@@ -33,6 +33,34 @@
             "dependsOrder": "sequence"
         },
         {
+            "label": "ESP-IDF: OpenOCD (USB JTAG)",
+            "type": "shell",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM1 bash -c 'exec openocd -f board/esp32s3-builtin.cfg'",
+            "isBackground": true,
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".*",
+                        "endsPattern": "Listening on port 3333 for gdb connections"
+                    }
+                }
+            ]
+        },
+        {
+            "label": "ESP-IDF: Stop OpenOCD",
+            "type": "shell",
+            "command": "pkill -f openocd"
+        },
+        {
             "label": "ESP-IDF: Reconfigure",
             "type": "shell",
             "command": "idf.py reconfigure",

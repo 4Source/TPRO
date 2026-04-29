@@ -178,3 +178,29 @@ sudo gitlab-runner register
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 ```
+
+## Setup Debugger
+Based on the [ESP-IDF JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/v6.0.1/esp32s3/api-guides/jtag-debugging/)
+
+### OpenOCD
+OpenOCD should already be installed 
+```console
+openocd --version
+```
+
+In the `/etc/udev/rules.d` folder add the following files:
+- `60-openocd.rules` with the content from [here](https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules)
+- `70-esp32s3-jtag.rules` with 
+```
+ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", MODE="0660", GROUP="esp-dev", TAG+="uaccess"
+```
+
+Refresh udev rules with the command
+```console
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+After that OpenOCD should be possible to start without any errors 
+```console
+openocd -f board/esp32s3-builtin.cfg
+```
