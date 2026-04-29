@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import './style.css';
 import type { LedData, Coordinates } from './types';
-import { COLS, ROWS, WIDTH, HEIGHT, PADDING, GRID_WIDTH, GRID_HEIGHT, TOTAL_LEDS } from './constants';
+import { COLS, ROWS, WIDTH, HEIGHT, LED_WIDTH, LED_HEIGHT, TOTAL_LEDS, PADDING_X, PADDING_Y } from './constants';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTps } from './hooks/useTps';
 import { SettingsMenu } from './components/SettingsMenu';
@@ -50,8 +50,8 @@ export function Simulation() {
 			const newData: LedData[] = [];
 			for (let row = 0; row < ROWS; row++) {
 				for (let col = 0; col < COLS; col++) {
-					const mmX = PADDING + (col * (GRID_WIDTH / (COLS - 1)));
-					const mmY = PADDING + (row * (GRID_HEIGHT / (ROWS - 1)));
+					const mmX = PADDING_X + ((col / (COLS - 1)) * LED_WIDTH);
+					const mmY = PADDING_Y + ((row / (ROWS - 1)) * LED_HEIGHT);
 					const [lon, lat] = tps.transform(mmX, mmY);
 					newData.push({ index: (row * COLS) + col, col, row, mmX, mmY, lon, lat });
 				}

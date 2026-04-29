@@ -1,10 +1,11 @@
 /* Grid Konstanten */
 :root {
-	--cols: 60;
-	--rows: 54;
+	--cols: 87;
+	--rows: 35;
 	--width: 3000;
 	--height: 1800;
-	--padding: 1;
+	--padding-x: 45 + (13/6);
+	--padding-y: 45;
 }
 
 /*Pascals style*/
@@ -46,14 +47,16 @@
 }
 
 .matrix-grid {
+	position: absolute;
+	left: calc(45 / 3000 * 100%);
+	right: calc(45 / 3000 * 100%);
+	top: calc(45 / 1800 * 100%);
+	bottom: calc(45 / 1800 * 100%);
 	display: grid;
 	grid-template-columns: repeat(var(--cols), 1fr);
 	grid-template-rows: repeat(var(--rows), 1fr);
 	column-gap: calc((100% - var(--cols) * 1px) / (var(--cols) - 1));
 	row-gap: calc((100% - var(--rows) * 1px) / (var(--rows) - 1));
-	width: 100%;
-	height: 100%;
-	position: relative;
 	z-index: 2;
 }
 
@@ -75,7 +78,8 @@
 	left: 0;
 	width: 100%;
 	height: 100%;
-	object-fit: contain;
+	object-fit: cover;
+	/* eigentlicht contain, aber cover gegen weisse Streifen */
 	pointer-events: none;
 }
 
@@ -760,22 +764,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	background-color: #dbeafe !important;
 	color: #1e40af !important;
 }
+
 .sim-light .bg-blue-600:disabled {
 	background-color: #e2e8f0 !important;
 	color: #94a3b8 !important;
 }
+
 .sim-light .bg-green-600 {
 	background-color: #dcfce7 !important;
 	color: #166534 !important;
 }
+
 .sim-light .bg-green-600:disabled {
 	background-color: #e2e8f0 !important;
 	color: #94a3b8 !important;
 }
+
 .sim-light .bg-cyan-600 {
 	background-color: #cffafe !important;
 	color: #155e75 !important;
 }
+
 .sim-light .bg-cyan-600:disabled {
 	background-color: #e2e8f0 !important;
 	color: #94a3b8 !important;
