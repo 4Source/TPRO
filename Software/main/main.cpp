@@ -110,11 +110,27 @@ extern "C" void app_main(void) {
 	FileManager::write_default_configs();
 	FileManager::print_default_configs();
 
-	// Test Blink
-	auto blink_effect = effect_manager.get_effect(DefaultConfigs::kDefaultBlinkConfigPath);
-	effect_manager.register_effect(blink_effect);
-	effect_manager.set_effect(blink_effect);
-	effect_manager.start();
+	// Load Configuration from SD Card
+	if (main_config.deserialize("/config.json") != ESP_OK) {
+		ESP_LOGW(kTag, "Failed to load /config.json, creating default config.");
+		main_config.serialize("/config.json");
+	}
+
+	// Start Effect
+	std::string current_effect_path = main_config.get_config("current_effect");
+	if (current_effect_path.empty()) {
+		current_effect_path = DefaultConfigs::kDefaultBlinkConfigPath;
+		main_config.set_config("current_effect", current_effect_path);
+	}
+
+	auto effect = effect_manager.get_effect(current_effect_path);
+	if (effect) {
+		effect_manager.register_effect(effect);
+		effect_manager.set_effect(effect);
+		effect_manager.start();
+	} else {
+		ESP_LOGE(kTag, "Failed to start initial effect: %s", current_effect_path.c_str());
+	}
 
 	while (true) {
 		// Delay to simulate load

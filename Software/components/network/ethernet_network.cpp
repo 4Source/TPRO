@@ -15,26 +15,26 @@
 // This is for clang tidy when not configured the files still get analyzed and than have missing defines
 #ifdef __clang__
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
-#ifndef ETHERNET_SPI_MISO_GPIO
-#define ETHERNET_SPI_MISO_GPIO 12
+#ifndef CONFIG_ETHERNET_SPI_MISO_GPIO
+#define CONFIG_ETHERNET_SPI_MISO_GPIO 12
 #endif
-#ifndef ETHERNET_SPI_MOSI_GPIO
-#define ETHERNET_SPI_MOSI_GPIO 11
+#ifndef CONFIG_ETHERNET_SPI_MOSI_GPIO
+#define CONFIG_ETHERNET_SPI_MOSI_GPIO 11
 #endif
-#ifndef ETHERNET_SPI_SCLK_GPIO
-#define ETHERNET_SPI_SCLK_GPIO 13
+#ifndef CONFIG_ETHERNET_SPI_SCLK_GPIO
+#define CONFIG_ETHERNET_SPI_SCLK_GPIO 13
 #endif
-#ifndef ETHERNET_SPI_CS_GPIO
-#define ETHERNET_SPI_CS_GPIO 14
+#ifndef CONFIG_ETHERNET_SPI_CS_GPIO
+#define CONFIG_ETHERNET_SPI_CS_GPIO 14
 #endif
-#ifndef ETHERNET_SPI_HOST
-#define ETHERNET_SPI_HOST 2
+#ifndef CONFIG_ETHERNET_SPI_HOST
+#define CONFIG_ETHERNET_SPI_HOST 2
 #endif
-#ifndef ETHERNET_RST_GPIO
-#define ETHERNET_RST_GPIO 9
+#ifndef CONFIG_ETHERNET_RST_GPIO
+#define CONFIG_ETHERNET_RST_GPIO 9
 #endif
-#ifndef ETHERNET_INT_GPIO
-#define ETHERNET_INT_GPIO 10
+#ifndef CONFIG_ETHERNET_INT_GPIO
+#define CONFIG_ETHERNET_INT_GPIO 10
 #endif
 // NOLINTEND(cppcoreguidelines-macro-usage)
 #endif
