@@ -1,0 +1,3 @@
+config ENABLE_LED
+    bool "Enable LED"
+    default y

@@ -1,7 +1,6 @@
 ---
 # Keine Warnings aus ESP-IDF Framework
 SystemHeaders: false
-HeaderFilterRegex: '^(main/|components/).*'
 
 # Setze c++26 wie in idf compiler config gnu++26
 ExtraArgs:

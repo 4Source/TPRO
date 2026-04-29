@@ -1,0 +1,3 @@
+config ENABLE_APIS
+    bool "Enable APIS"
+    default y

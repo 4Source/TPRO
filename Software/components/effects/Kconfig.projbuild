@@ -1,0 +1,3 @@
+config ENABLE_EFFECTS
+    bool "Enable Effects"
+    default y

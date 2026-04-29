@@ -4,7 +4,7 @@ set(MANAGER_SOURCES
     ${CMAKE_SOURCE_DIR}/../components/effects/day_night_effect.cpp
     ${CMAKE_SOURCE_DIR}/../components/effects/timeline_effect.cpp
     ${CMAKE_SOURCE_DIR}/../components/effects/blinking_effect.cpp
-    ${CMAKE_SOURCE_DIR}/../components/time/datetime.cpp
+    ${CMAKE_SOURCE_DIR}/../components/datetime/datetime.cpp
     ${CMAKE_SOURCE_DIR}/mocks.cpp
 )
 
@@ -17,7 +17,7 @@ target_include_directories(test_effects PRIVATE
     ${CMAKE_SOURCE_DIR}/mock_esp
     ${CMAKE_SOURCE_DIR}/../components/effects/include
     ${CMAKE_SOURCE_DIR}/../components/led/include
-    ${CMAKE_SOURCE_DIR}/../components/time/include
+    ${CMAKE_SOURCE_DIR}/../components/datetime/include
 )
 
 target_link_libraries(test_effects gtest gtest_main gmock)

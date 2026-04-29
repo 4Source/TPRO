@@ -1,16 +1,23 @@
-# Set source files and include directories
-set(srcs 
-        day_night_effect.cpp
-        blinking_effect.cpp
-        timeline_effect.cpp
-        effect_factory.cpp)
-set(include_dirs include) #effects.hpp
-set(requires 
-        espressif__json_parser 
-        espressif__cjson
-        led
-        time
-        file_manager)
+message(STATUS "-------------------------------------------------------")
+message(STATUS "CHECKING VARIABLE NAMES FOR: effects")
+message(STATUS "Variable 'CONFIG_ENABLE_EFFECTS' is: '${CONFIG_ENABLE_EFFECTS}'")
+message(STATUS "-------------------------------------------------------")
+
+# KConfig Effects aktiv sonst nichts registrieren
+set(srcs "")
+set(requires "datetime" "config_manager" "espressif__cjson" "file_manager" "espressif__json_parser" "led")
+set(include_dirs "include")
+
+# Quelldateien nur hinzufügen, wenn das Modul aktiv ist
+if(CONFIG_ENABLE_EFFECTS)
+    list(APPEND srcs 
+        "day_night_effect.cpp"
+        "blinking_effect.cpp"
+        "timeline_effect.cpp"
+        "effect_factory.cpp")
+    list(APPEND requires 
+)
+endif()
 
 message(STATUS "Configure effects component: ")
 
@@ -34,6 +41,6 @@ message(STATUS "\t\tInclude: ${include_dirs}")
 message(STATUS "\t\tRequires: ${requires}")
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}
-                       REQUIRES  ${requires})
+                       REQUIRES ${requires})
 
 message(STATUS "Configure effects component done")

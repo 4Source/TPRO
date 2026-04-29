@@ -1,13 +1,13 @@
 # Testspezifische Sources
 set(MANAGER_SOURCES
-    ${CMAKE_SOURCE_DIR}/../components/time/datetime.cpp
+    ${CMAKE_SOURCE_DIR}/../components/datetime/datetime.cpp
 )
 
 add_executable(test_datetime test_datetime.cpp ${MANAGER_SOURCES})
 
 # Testspezifische Includes
 target_include_directories(test_datetime PRIVATE 
-    ${CMAKE_SOURCE_DIR}/../components/time/include
+    ${CMAKE_SOURCE_DIR}/../components/datetime/include
 
 )
 

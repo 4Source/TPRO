@@ -1,7 +1,13 @@
-# Set source files and include directories
+message(STATUS "-------------------------------------------------------")
+message(STATUS "CHECKING VARIABLE NAMES FOR: network")
+message(STATUS "Variable 'CONFIG_CONNECT_ETHERNET' is: '${CONFIG_CONNECT_ETHERNET}'")
+message(STATUS "Variable 'CONFIG_CONNECT_WIFI' is: '${CONFIG_CONNECT_WIFI}'")
+message(STATUS "-------------------------------------------------------")
+
+
 set(srcs 
         network.cpp)
-set(include_dirs include)
+set(include_dirs "include")
 set(requires 
         esp_driver_gpio
         esp_driver_spi
@@ -32,13 +38,14 @@ if(CONFIG_CONNECT_WIFI)
     list(APPEND srcs wifi_network.cpp)
 endif()
 
-# Register the component
-message(STATUS "\tRegister network component with:")
-message(STATUS "\t\tSource: ${srcs}")
-message(STATUS "\t\tInclude: ${include_dirs}")
-message(STATUS "\t\tRequires: ${requires}")
-idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS ${include_dirs}
-                       REQUIRES  ${requires})
-
-message(STATUS "Configure network component done")
+# nichts registrieren wenn netzwerk nicht aktiviert ist
+if(srcs STREQUAL "")
+    idf_component_register() 
+    message(STATUS "Network component is DISABLED (no sources)")
+else()
+    list(REMOVE_DUPLICATES requires)
+    idf_component_register(SRCS ${srcs}
+                           INCLUDE_DIRS ${include_dirs}
+                           REQUIRES ${requires})
+    message(STATUS "Network component REGISTERED with: ${srcs}")
+endif()

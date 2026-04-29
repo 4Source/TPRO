@@ -2,15 +2,48 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NOCOLOR='\033[0m'
+
+# led_wal_master is default folder
+TARGET_DIR="${1:-apps/led_wall_master}"
+ABS_TARGET_DIR=$(realpath "$TARGET_DIR")
+CURRENT_DIR="$(pwd)"
+
+echo -e "${GREEN}Verwende Verzeichnis: ${ABS_TARGET_DIR}${NOCOLOR}"
+
 export IDF_TOOLCHAIN=clang
-#rm -rf build
-#idf.py reconfigure
-mkdir -p build_clang
-# configure with clang and generate compile_commands.json no reconfiguring of build folder needed
-idf.py -B build_clang reconfigure
-sed -i 's/-I\/opt\/esp\//-isystem\/opt\/esp\//g' build_clang/compile_commands.json
+
+if [ ! -d "$ABS_TARGET_DIR" ]; then
+    echo -e "${RED}Fehler: Verzeichnis $ABS_TARGET_DIR existiert nicht.${NOCOLOR}"
+    exit 1
+fi
+
+mkdir -p "$ABS_TARGET_DIR/build_clang"
+idf.py -C "$ABS_TARGET_DIR" -B "$ABS_TARGET_DIR/build_clang" reconfigure
+
+sed -i 's/-I\/opt\/esp\//-isystem\/opt\/esp\//g' "$ABS_TARGET_DIR/build_clang/compile_commands.json"
 echo -e "${GREEN}Running clang-tidy...${NOCOLOR}"
-git ls-files "*.cpp" "*.c" | grep -E "^(main/|components/)" | xargs -P $(nproc) -I {} clang-tidy {} -p build_clang/ --warnings-as-errors='*' -header-filter='.*/Software/(main|components)/.*' 2>&1 | tee warnings.txt
-echo -e "\n${RED}Summary of Clang-Tidy warnings treated as errors:${NOCOLOR}"
-cat warnings.txt | grep "error: "
-ERR_SUM=$(grep -Po '\d+(?= warnings? treated as errors?)' warnings.txt | awk '{s+=$1} END {print s+0}') && [ "$ERR_SUM" -gt 0 ] && echo -e "\n${RED}Total Clang-Tidy errors: $ERR_SUM${NOCOLOR}" && exit 1 || echo -e "\n${GREEN}No errors found${NOCOLOR}"
+
+#git ls-files "*.cpp" "*.c" | grep -E "^($ABS_TARGET_DIR/main/|components/)" | xargs -P $(nproc) -I {} clang-tidy {} -p "$ABS_TARGET_DIR/build_clang/" --warnings-as-errors='*' -header-filter="^($ABS_TARGET_DIR/(?!managed_components)main/|components/).*" 2>&1 | tee "$ABS_TARGET_DIR/warnings.txt"
+
+# Ziehe Files die tatsächlich auch kompiliert werden
+FILE_FILTER="^($ABS_TARGET_DIR/main/|$CURRENT_DIR/components/)"
+HEADER_FILTER="^($ABS_TARGET_DIR/(?!managed_components)main/|$CURRENT_DIR/components/)"
+
+jq -r '.[].file' "$ABS_TARGET_DIR/build_clang/compile_commands.json" | \
+grep -E "$FILE_FILTER" | \
+xargs -P $(nproc) -I {} clang-tidy {} \
+  -p "$ABS_TARGET_DIR/build_clang/" \
+  --warnings-as-errors='*' \
+  -header-filter="$HEADER_FILTER" \
+  2>&1 | tee "$ABS_TARGET_DIR/warnings.txt"
+
+grep "error: " "$ABS_TARGET_DIR/warnings.txt"
+
+ERR_SUM=$(grep -Po '\d+(?= warnings? treated as errors?)' "$ABS_TARGET_DIR/warnings.txt" | awk '{s+=$1} END {print s+0}')
+
+if [ "$ERR_SUM" -gt 0 ]; then
+    echo -e "\n${RED}Total Clang-Tidy errors: $ERR_SUM${NOCOLOR}"
+    exit 1
+else
+    echo -e "\n${GREEN}No errors found${NOCOLOR}"
+fi

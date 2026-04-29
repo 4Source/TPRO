@@ -1,0 +1,3 @@
+config ENABLE_CONFIG_MANAGER
+    bool "Enable Config Manager"
+    default y

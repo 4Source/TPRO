@@ -132,6 +132,12 @@ extern "C" void app_main(void) {
 		ESP_LOGE(kTag, "Failed to start initial effect: %s", current_effect_path.c_str());
 	}
 
+	// Test Blink
+	auto blink_effect = effect_manager.get_effect(DefaultConfigs::kDefaultBlinkConfigPath);
+	effect_manager.register_effect(blink_effect);
+	effect_manager.set_effect(blink_effect);
+	effect_manager.start();
+
 	while (true) {
 		// Delay to simulate load
 		vTaskDelay(1000 / portTICK_PERIOD_MS);

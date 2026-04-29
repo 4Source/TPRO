@@ -1,0 +1,15 @@
+    # This file was generated using idf.py save-defconfig. It can be edited manually.
+    # Espressif IoT Development Framework (ESP-IDF) 6.0.0 Project Minimal Configuration
+    #
+    # default:
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ENABLE_APIS=n
+CONFIG_ENABLE_CONFIG_MANAGER=n
+CONFIG_ENABLE_DATE_TIME=n
+CONFIG_ENABLE_EFFECTS=n
+CONFIG_ENABLE_FILE_MANAGER=n
+CONFIG_ENABLE_HTTPS_SERVER=n
+CONFIG_ENABLE_LED=n
+CONFIG_ENABLE_LIGHT_EFFECT_MANAGER=n
+CONFIG_ENABLE_TASK_HANDLES=n
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

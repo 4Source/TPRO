@@ -1,0 +1,3 @@
+config ENABLE_LIGHT_EFFECT_MANAGER
+    bool "Enable Light Effect Manager"
+    default y

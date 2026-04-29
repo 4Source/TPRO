@@ -8,10 +8,10 @@ CONF="$CERT_DIR/server_cert.conf"
 
 mkdir -p "$CERT_DIR"
 
-SDKCONFIG="$(git rev-parse --show-toplevel)/Software/sdkconfig"
+SDKCONFIG="$(git rev-parse --show-toplevel)/Software/apps/led_wall_master/sdkconfig"
 if [ ! -f "$SDKCONFIG" ]; then
     echo "sdkconfig not found use sdkconfig.defaults instead"
-    SDKCONFIG="$(git rev-parse --show-toplevel)/Software/sdkconfig.defaults"
+    SDKCONFIG="$(git rev-parse --show-toplevel)/Software/apps/led_wall_master/sdkconfig.defaults"
 fi
 HOSTNAME=$(grep 'CONFIG_LWIP_LOCAL_HOSTNAME=' "$SDKCONFIG" | cut -d= -f2 | tr -d '"')
 if [ -z "$HOSTNAME" ]; then
