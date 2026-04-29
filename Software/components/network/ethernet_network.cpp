@@ -197,6 +197,10 @@ void EthernetNetwork::handle_eth_start() { ESP_LOGD(kTag, "Ethernet is successfu
 
 void EthernetNetwork::handle_eth_stop() {
 	ESP_LOGD(kTag, "Ethernet is successfully stopped");
+
+	mdns_free();
+	ESP_LOGI(kTag, "MDNS service stopped");
+
 	xEventGroupClearBits(s_eth_event_group, ETH_CONNECTED_BIT);
 }
 
@@ -212,6 +216,9 @@ void EthernetNetwork::handle_eth_disconnected(esp_eth_handle_t event) {
 	esp_eth_ioctl(event, ETH_CMD_G_MAC_ADDR, mac_addr.data());
 	ESP_LOGI(kTag, "Ethernet is disconnected as MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac_addr.at(0), mac_addr.at(1), mac_addr.at(2), mac_addr.at(3),
 			 mac_addr.at(4), mac_addr.at(5));
+
+	mdns_free();
+	ESP_LOGI(kTag, "MDNS service stopped");
 
 	xEventGroupClearBits(s_eth_event_group, ETH_CONNECTED_BIT);
 }
