@@ -110,10 +110,6 @@ void WifiNetwork::handle_sta_start() {
 
 void WifiNetwork::handle_sta_stop() {
 	ESP_LOGD(kTag, "WiFi is successfully stopped");
-
-	mdns_free();
-	ESP_LOGI(kTag, "MDNS service stopped");
-
 	xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 }
 
@@ -125,10 +121,6 @@ void WifiNetwork::handle_sta_connected(wifi_event_sta_connected_t *event) {
 void WifiNetwork::handle_sta_disconnected(wifi_event_sta_disconnected_t *event) {
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 	ESP_LOGI(kTag, "WiFi is disconnected from SSID: %s (%s)", reinterpret_cast<char *>(event->ssid), wifi_reason_to_string(event->reason));
-
-	mdns_free();
-	ESP_LOGI(kTag, "MDNS service stopped");
-
 	xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 
 	handle_sta_reconnect(event);
@@ -162,7 +154,11 @@ void WifiNetwork::handle_got_ip(ip_event_got_ip_t *event) {
 	xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 }
 
-void WifiNetwork::handle_lost_ip() { ESP_LOGW(kTag, "WiFi lost IPv4 address"); }
+void WifiNetwork::handle_lost_ip() {
+	ESP_LOGW(kTag, "WiFi lost IPv4 address");
+	mdns_free();
+	ESP_LOGI(kTag, "MDNS service stopped");
+}
 
 constexpr const char *wifi_reason_to_string(wifi_err_reason_t reason) {
 	switch (reason) {
