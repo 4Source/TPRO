@@ -1,0 +1,4 @@
+# components/https_server/Kconfig.projbuild
+config ENABLE_HTTPS_SERVER
+    bool "Enable HTTPS Server Component"
+    default y

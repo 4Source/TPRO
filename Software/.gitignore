@@ -1,7 +1,7 @@
 # Build artifacts and directories
 **/build/
 build/
-build_clang/
+build_clang*/
 *.o
 *.a
 *.out

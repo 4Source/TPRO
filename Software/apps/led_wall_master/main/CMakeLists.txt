@@ -10,6 +10,7 @@ set(requires
         log
         file_manager
         driver
+        datetime
         apis)
 
 idf_component_register(SRCS "main.cpp"

@@ -1,0 +1,3 @@
+config ENABLE_TASK_HANDLES
+    bool "Enable Task Handles"
+    default y

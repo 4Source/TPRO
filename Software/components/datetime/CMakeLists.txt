@@ -1,25 +1,24 @@
 message(STATUS "-------------------------------------------------------")
-message(STATUS "CHECKING VARIABLE NAMES FOR: Led")
-message(STATUS "Variable 'CONFIG_ENABLE_LED' is: '${CONFIG_ENABLE_LED}'")
+message(STATUS "CHECKING VARIABLE NAMES FOR: Time")
+message(STATUS "Variable 'CONFIG_ENABLE_DATE_TIME' is: '${CONFIG_ENABLE_DATE_TIME}'")
 message(STATUS "-------------------------------------------------------")
 
-# KConfig Led aktiv sonst nichts registrieren
+
+# KConfig Time aktiv sonst nichts registrieren
 set(srcs "")
 set(requires "")
 set(include_dirs include)
 
-if(CONFIG_ENABLE_LED)
-    set(srcs "")
-    set(requires 
-        driver
-        esp_driver_gpio
-    )
+if(CONFIG_ENABLE_DATE_TIME)
+    set(srcs 
+        datetime.cpp)
+    set(requires )
 endif()
 
-message(STATUS "Configure led component: ")
+message(STATUS "Configure datetime component: ")
 
 # Register the component
-message(STATUS "\tRegister led component with:")
+message(STATUS "\tRegister datetime component with:")
 message(STATUS "\t\tSource: ${srcs}")
 message(STATUS "\t\tInclude: ${include_dirs}")
 message(STATUS "\t\tRequires: ${requires}")
@@ -27,4 +26,4 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}
                        REQUIRES ${requires})
 
-message(STATUS "Configure led component done")
+message(STATUS "Configure datetime component done")

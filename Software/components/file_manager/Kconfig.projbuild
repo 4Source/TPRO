@@ -1,0 +1,3 @@
+config ENABLE_FILE_MANAGER
+    bool "Enable File Manager"
+    default y

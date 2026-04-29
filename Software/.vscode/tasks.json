@@ -4,7 +4,7 @@
         {
             "label": "ESP-IDF: Build Project",
             "type": "shell",
-            "command": "idf.py build",
+            "command": "idf.py -C apps/led_wall_master -B apps/led_wall_master/build build",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -14,13 +14,13 @@
         {
             "label": "ESP-IDF: Flash",
             "type": "shell",
-            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py flash -p /dev/ttyACM0'",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py -C apps/led_wall_master -B apps/led_wall_master/build flash -p /dev/ttyACM0'",
             "problemMatcher": []
         },
         {
             "label": "ESP-IDF: Monitor",
             "type": "shell",
-            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py monitor'",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM0 bash -c 'idf.py -C apps/led_wall_master -B apps/led_wall_master/build monitor'",
             "problemMatcher": []
         },
         {
@@ -63,7 +63,7 @@
         {
             "label": "ESP-IDF: Reconfigure",
             "type": "shell",
-            "command": "idf.py reconfigure",
+            "command": "idf.py -C apps/led_wall_master -B apps/led_wall_master/build reconfigure",
             "problemMatcher": []
         },
         {
