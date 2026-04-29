@@ -2,7 +2,7 @@
 set(srcs 
         config_manager.cpp)
 set(include_dirs include)
-set(requires )
+set(requires espressif__json_parser espressif__cjson file_manager)
 
 message(STATUS "Configure config-manager component: ")
 

@@ -109,4 +109,7 @@ class ConfigManager {
 
 	//(DELETE)
 	esp_err_t set_to_default(const std::string &key);
+
+	esp_err_t serialize(const std::string &path) const;
+	esp_err_t deserialize(const std::string &path);
 };

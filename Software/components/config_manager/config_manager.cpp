@@ -1,8 +1,11 @@
 #include "config_manager.hpp"
 #include "./config_observer.hpp"
 #include "./config_type.hpp"
+#include "cJSON.h"
+#include "file_manager.hpp"
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <ranges>
 #include <string>
 #include <unordered_map>
@@ -147,6 +150,7 @@ esp_err_t ConfigManager::set_config(const std::string &key, const std::string &v
 	}
 
 	notify_observers(key); // update observers
+	serialize("/config.json");
 	return ESP_OK;
 }
 
@@ -154,6 +158,7 @@ esp_err_t ConfigManager::set_config(const std::string &key, const std::string &v
 esp_err_t ConfigManager::set_config(ConfigType new_config) {
 	config = std::move(new_config);
 	notify_observers();
+	serialize("/config.json");
 	return ESP_OK;
 }
 
@@ -186,6 +191,68 @@ esp_err_t ConfigManager::set_to_default(const std::string &key) {
 		return ESP_FAIL;
 	}
 	}
+	notify_observers();
+	// Always serialize on delete
+	serialize("/config.json");
+	return ESP_OK;
+}
+
+// -----------------
+// JSON
+// -----------------
+
+esp_err_t ConfigManager::serialize(const std::string &path) const {
+	std::unique_ptr<cJSON, decltype(&cJSON_Delete)> root(cJSON_CreateObject(), cJSON_Delete);
+
+	if (root == nullptr) {
+		return ESP_FAIL;
+	}
+
+	cJSON_AddStringToObject(root.get(), "current_effect", config.current_effect.string().c_str());
+	cJSON_AddStringToObject(root.get(), "effects_path", config.effects_path.string().c_str());
+	cJSON_AddNumberToObject(root.get(), "speed", config.speed);
+	cJSON_AddNumberToObject(root.get(), "brightness", config.brightness);
+
+	std::unique_ptr<char, decltype(&free)> json_string(cJSON_PrintUnformatted(root.get()), free);
+	if (json_string == nullptr) {
+		return ESP_FAIL;
+	}
+
+	return FileManager::save_file(path, json_string.get());
+}
+
+esp_err_t ConfigManager::deserialize(const std::string &path) {
+	auto opt_json = FileManager::read_file(path);
+
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
+
+	std::unique_ptr<cJSON, decltype(&cJSON_Delete)> root(cJSON_Parse(opt_json.value().c_str()), cJSON_Delete);
+	if (root == nullptr) {
+		return ESP_FAIL;
+	}
+
+	cJSON *item = cJSON_GetObjectItem(root.get(), "current_effect");
+	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
+		config.current_effect = std::filesystem::path(item->valuestring);
+	}
+
+	item = cJSON_GetObjectItem(root.get(), "effects_path");
+	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
+		config.effects_path = std::filesystem::path(item->valuestring);
+	}
+
+	item = cJSON_GetObjectItem(root.get(), "speed");
+	if (cJSON_IsNumber(item) != 0) {
+		config.speed = item->valueint;
+	}
+
+	item = cJSON_GetObjectItem(root.get(), "brightness");
+	if (cJSON_IsNumber(item) != 0) {
+		config.brightness = item->valueint;
+	}
+
 	notify_observers();
 	return ESP_OK;
 }
