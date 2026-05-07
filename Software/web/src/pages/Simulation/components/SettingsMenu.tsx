@@ -3,6 +3,7 @@ import { OpacitySlider } from '../../../components/OpacitySlider/OpacitySlider';
 import { EffectPanel } from './EffectPanel';
 import type { ThinPlateSpline } from '../../../tps';
 import type { LedData, Coordinates } from '../types';
+import { startSunDataGeneration } from '../../../sunapi';
 
 type Props = {
 	open: boolean;
@@ -48,6 +49,28 @@ export function SettingsMenu({
 	showMap, mapOpacity, dotsOpacity, onToggleMap, onMapOpacityChange, onDotsOpacityChange,
 }: Props) {
 	const [showEffects, setShowEffects] = useState(false);
+
+	const [sunStatus, setSunStatus] = useState<string | null>(null);
+	const [sunProgress, setSunProgress] = useState("");
+
+	const handleGenerateSunData = () => {
+		if (!gridData) return;
+
+		// Mapping deiner LedData auf das Format der API-Funktion
+		const leds = gridData.map(led => ({
+			index: led.index,
+			x: led.col,
+			y: led.row,
+			lat: led.lat,
+			lon: led.lon
+		}));
+
+		setSunStatus("Starte...");
+		startSunDataGeneration(leds, 2024, (status, progress) => {
+			setSunStatus(status);
+			setSunProgress(progress);
+		});
+	};
 
 	const handleClose = () => {
 		setShowEffects(false);
@@ -105,6 +128,23 @@ export function SettingsMenu({
 									Exportieren
 								</button>
 							</div>
+
+								<div class="flex gap-2 mt-2">
+									<button
+										onClick={handleGenerateSunData}
+										disabled={!gridData || sunStatus !== null && sunStatus !== "Abgeschlossen"}
+										class="w-full py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-sm font-semibold"
+									>
+										{sunStatus ? 'Generiere Jahr...' : 'Sonnendaten (Jahr) auf SD'}
+									</button>
+
+									{sunStatus && (
+										<div class="settings-mono-box mt-1 text-[10px] leading-tight border-amber-500/30">
+											<p class="text-amber-400 font-bold">{sunStatus}</p>
+											<p class="text-gray-400">{sunProgress}</p>
+										</div>
+									)}
+								</div>
 						</div>
 
 						{/* Koordinaten */}
