@@ -1,8 +1,8 @@
 #include "file_manager.hpp"
-#include "default_configs.hpp"
 
 #include <dirent.h>
 #include <driver/sdspi_host.h>
+#include <esp_random.h>
 #include <esp_timer.h>
 #include <esp_vfs_fat.h>
 #include <sstream>
@@ -16,6 +16,7 @@
 
 sdmmc_card_t *FileManager::card = nullptr;
 spi_host_device_t FileManager::host_slot = SPI3_HOST;
+static constexpr const char *kTag = "file-manager";
 
 std::string FileManager::resolve_path(const std::string &path) {
 	if (path.empty() || path == "/") {
@@ -52,7 +53,7 @@ esp_err_t FileManager::ensure_directories(const std::string &path) {
 		current_path += "/" + segment;
 
 		if (mkdir(current_path.c_str(), 0755) != 0 && errno != EEXIST) {
-			ESP_LOGE(kTAG, "mkdir failed: %s (errno: %d)", current_path.c_str(), errno);
+			ESP_LOGE(kTag, "mkdir failed: %s (errno: %d)", current_path.c_str(), errno);
 			return ESP_FAIL;
 		}
 	}
@@ -62,7 +63,7 @@ esp_err_t FileManager::ensure_directories(const std::string &path) {
 esp_err_t FileManager::mount() {
 
 	if (card != nullptr) {
-		ESP_LOGW(kTAG, "SD Card is already mounted.");
+		ESP_LOGW(kTag, "SD Card is already mounted.");
 		return ESP_OK;
 	}
 
@@ -74,7 +75,7 @@ esp_err_t FileManager::mount() {
 		.use_one_fat = false,
 	};
 
-	ESP_LOGI(kTAG, "Initializing SD card via SPI");
+	ESP_LOGI(kTag, "Initializing SD card via SPI");
 
 	sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 	host.slot = SPI3_HOST; // SPI3 nutzen 1&2 werden wohl von ethernet belegt
@@ -105,9 +106,9 @@ esp_err_t FileManager::mount() {
 		if (ret == ESP_OK || ret == ESP_ERR_INVALID_STATE) {
 			s_spi_bus_initialized = true;
 			ret = ESP_OK;
-			ESP_LOGI(kTAG, "SPI bus is ready.");
+			ESP_LOGI(kTag, "SPI bus is ready.");
 		} else {
-			ESP_LOGE(kTAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
+			ESP_LOGE(kTag, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
 			return ret;
 		}
 	}
@@ -120,17 +121,17 @@ esp_err_t FileManager::mount() {
 
 	if (ret != ESP_OK) {
 		if (ret == ESP_FAIL) {
-			ESP_LOGE(kTAG, "Failed to mount filesystem.");
+			ESP_LOGE(kTag, "Failed to mount filesystem.");
 		} else {
-			ESP_LOGE(kTAG, "Failed to initialize the card.");
+			ESP_LOGE(kTag, "Failed to initialize the card.");
 		}
 		spi_bus_free(host_slot);
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTAG, "SDCard mounted at: %s", kMountPoint);
+	ESP_LOGI(kTag, "SDCard mounted at: %s", kMountPoint);
 	if (card == nullptr) {
-		ESP_LOGW(kTAG, "SD Card is not mounted.");
+		ESP_LOGW(kTag, "SD Card is not mounted.");
 		return ESP_FAIL;
 	}
 	return ESP_OK;
@@ -138,11 +139,11 @@ esp_err_t FileManager::mount() {
 
 esp_err_t FileManager::unmount() {
 	if (card == nullptr) {
-		ESP_LOGW(kTAG, "SD Card is not mounted.");
+		ESP_LOGW(kTag, "SD Card is not mounted.");
 		return ESP_FAIL;
 	}
 	esp_vfs_fat_sdcard_unmount(kMountPoint, card);
-	ESP_LOGI(kTAG, "Card unmounted");
+	ESP_LOGI(kTag, "Card unmounted");
 	spi_bus_free(host_slot);
 	card = nullptr;
 	return ESP_OK;
@@ -152,15 +153,15 @@ esp_err_t FileManager::save_file(const std::string &filename, const std::string 
 	std::string path = resolve_path(filename);
 
 	if (ensure_directories(path) != ESP_OK) {
-		ESP_LOGE(kTAG, "Failed to ensure directories for path: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to ensure directories for path: %s", path.c_str());
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTAG, "Saving file: %s", path.c_str());
+	ESP_LOGI(kTag, "Saving file: %s", path.c_str());
 
 	std::ofstream file(path);
 	if (!file.is_open()) {
-		ESP_LOGE(kTAG, "Failed to open file for saving: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to open file for saving: %s", path.c_str());
 		return ESP_FAIL;
 	}
 
@@ -172,11 +173,11 @@ esp_err_t FileManager::save_file(const std::string &filename, const std::string 
 
 esp_err_t FileManager::append_file(const std::string &filename, const std::string &content) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTAG, "Appending file: %s", path.c_str());
+	ESP_LOGI(kTag, "Appending file: %s", path.c_str());
 
 	std::ofstream file(path, std::ios::out | std::ios::app);
 	if (!file.is_open()) {
-		ESP_LOGE(kTAG, "Failed to open file for appending: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to open file for appending: %s", path.c_str());
 		return ESP_FAIL;
 	}
 
@@ -188,11 +189,11 @@ esp_err_t FileManager::append_file(const std::string &filename, const std::strin
 
 std::optional<std::string> FileManager::read_file(const std::string &filename) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTAG, "Reading file: %s", path.c_str());
+	ESP_LOGI(kTag, "Reading file: %s", path.c_str());
 
 	std::ifstream file(path);
 	if (!file.is_open()) {
-		ESP_LOGE(kTAG, "Failed to open file for reading: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to open file for reading: %s", path.c_str());
 		return std::nullopt;
 	}
 
@@ -205,11 +206,11 @@ std::optional<std::string> FileManager::read_file(const std::string &filename) {
 
 esp_err_t FileManager::delete_file(const std::string &filename) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTAG, "Deleting file: %s", path.c_str());
+	ESP_LOGI(kTag, "Deleting file: %s", path.c_str());
 
 	int result = unlink(path.c_str());
 	if (result != 0) {
-		ESP_LOGE(kTAG, "Failed to delete file: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to delete file: %s", path.c_str());
 		return ESP_FAIL;
 	}
 	return ESP_OK;
@@ -217,12 +218,12 @@ esp_err_t FileManager::delete_file(const std::string &filename) {
 
 std::vector<std::string> FileManager::list_directory(const std::string &directory_path) {
 	std::string path = resolve_path(directory_path);
-	ESP_LOGI(kTAG, "Listing directory: %s", path.c_str());
+	ESP_LOGI(kTag, "Listing directory: %s", path.c_str());
 
 	std::vector<std::string> files;
 	DIR *dir = opendir(path.c_str());
 	if (dir == nullptr) {
-		ESP_LOGE(kTAG, "Failed to open directory: %s", path.c_str());
+		ESP_LOGE(kTag, "Failed to open directory: %s", path.c_str());
 		return files;
 	}
 
@@ -247,11 +248,11 @@ std::vector<std::string> FileManager::list_directory(const std::string &director
 esp_err_t FileManager::is_file(const std::string &file_path) {
 	std::string path = resolve_path(file_path);
 	if (path.empty()) {
-		ESP_LOGE(kTAG, "Empty path");
+		ESP_LOGE(kTag, "Empty path");
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	ESP_LOGI(kTAG, "Check is file: %s", path.c_str());
+	ESP_LOGI(kTag, "Check is file: %s", path.c_str());
 
 	struct stat status;
 
@@ -269,11 +270,11 @@ esp_err_t FileManager::is_file(const std::string &file_path) {
 esp_err_t FileManager::is_directory(const std::string &directory_path) {
 	std::string path = resolve_path(directory_path);
 	if (path.empty()) {
-		ESP_LOGE(kTAG, "Empty path");
+		ESP_LOGE(kTag, "Empty path");
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	ESP_LOGI(kTAG, "Check is directory: %s", path.c_str());
+	ESP_LOGI(kTag, "Check is directory: %s", path.c_str());
 
 	struct stat status;
 
@@ -287,11 +288,43 @@ esp_err_t FileManager::is_directory(const std::string &directory_path) {
 
 	return ESP_OK;
 }
+// Ziehe einen ranmdom Effekt aus dem Verzeichnis /effects
+std::optional<std::string> FileManager::get_random_effect_path() {
+	ESP_LOGI(kTag, "Searching for random effect in directory: %s", "/effects/defaults");
+
+	std::vector<std::string> all_files = list_directory("/effects/defaults");
+	std::vector<std::string> json_files;
+
+	// Nach .jsons filtern und "timeline"-Dateien ignorieren - wichtig timeline effekte MÜSSEN immer timeline...heißen
+	for (const auto &file : all_files) {
+		if (!file.ends_with("/") && file.ends_with(".json") && !file.starts_with("timeline")) {
+			json_files.push_back(file);
+		}
+	}
+
+	if (json_files.empty()) {
+		ESP_LOGE(kTag, "No JSON effect files found in %s (or all were excluded)", "/effects/defaults");
+		return std::nullopt;
+	}
+
+	uint32_t random_index = esp_random() % json_files.size();
+	std::string selected_file = json_files[random_index];
+
+	std::string base_dir = "/effects/defaults";
+	if (!base_dir.ends_with("/")) {
+		base_dir += "/";
+	}
+
+	std::string full_path = base_dir + selected_file;
+	ESP_LOGI(kTag, "Random effect selected: %s", full_path.c_str());
+
+	return full_path;
+}
 
 esp_err_t FileManager::run_selftest() {
-	ESP_LOGI(kTAG, "--- Starting FileManager Selftest ---");
+	ESP_LOGI(kTag, "--- Starting FileManager Selftest ---");
 	if (mount() != ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Could not mount SD card.");
+		ESP_LOGE(kTag, "Selftest failed: Could not mount SD card.");
 		return ESP_FAIL;
 	}
 
@@ -299,28 +332,28 @@ esp_err_t FileManager::run_selftest() {
 	std::string test_content = "Hello, SD Card testing!";
 
 	if (save_file(test_file, test_content) != ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Could not save file.");
+		ESP_LOGE(kTag, "Selftest failed: Could not save file.");
 		return ESP_FAIL;
 	}
 
 	if (is_file(test_file) != ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: File not found which should exist");
+		ESP_LOGE(kTag, "Selftest failed: File not found which should exist");
 		return ESP_FAIL;
 	}
 
 	auto content = read_file(test_file);
 	if (!content.has_value() || content.value() != test_content) {
-		ESP_LOGE(kTAG, "Selftest failed: Read content does not match.");
+		ESP_LOGE(kTag, "Selftest failed: Read content does not match.");
 		return ESP_FAIL;
 	}
 
 	if (is_directory("/") != ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Directory not found which should exist");
+		ESP_LOGE(kTag, "Selftest failed: Directory not found which should exist");
 		return ESP_FAIL;
 	}
 
 	if (is_directory("/test/") == ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Found directory which should not exist");
+		ESP_LOGE(kTag, "Selftest failed: Found directory which should not exist");
 		return ESP_FAIL;
 	}
 
@@ -334,55 +367,76 @@ esp_err_t FileManager::run_selftest() {
 	}
 
 	if (!found) {
-		ESP_LOGE(kTAG, "Selftest failed: File not found in directory listing.");
+		ESP_LOGE(kTag, "Selftest failed: File not found in directory listing.");
 		return ESP_FAIL;
 	}
 
 	if (delete_file(test_file) != ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Could not delete file.");
+		ESP_LOGE(kTag, "Selftest failed: Could not delete file.");
 		return ESP_FAIL;
 	}
 
 	if (is_file(test_file) == ESP_OK) {
-		ESP_LOGE(kTAG, "Selftest failed: Found file which should not exist");
+		ESP_LOGE(kTag, "Selftest failed: Found file which should not exist");
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTAG, "--- FileManager Selftest Passed ---");
+	ESP_LOGI(kTag, "--- FileManager Selftest Passed ---");
 	return ESP_OK;
 }
 
-esp_err_t FileManager::write_default_configs() {
-	// Default configs auf sd karte schreiben
-	std::vector<std::pair<std::string, std::string>> default_configs = {
-		{DefaultConfigs::kDefaultDayNightConfigPath, DefaultConfigs::kDefaultDayNightConfig},
-		{DefaultConfigs::kDefaultBlinkConfigPath, DefaultConfigs::kDefaultBlinkConfig},
-		{DefaultConfigs::kDefaultTimelineConfigPath, DefaultConfigs::kDefaultTimelineConfig},
-	};
+// --- STREAMING METHODEN (Ohne RAM-Overhead, für ArduinoJson) ---
 
-	for (const auto &[path, content] : default_configs) {
-		if (save_file(path, content) != ESP_OK) {
-			ESP_LOGE(kTAG, "Failed to write default config: %s", path.c_str());
-			return ESP_FAIL;
-		}
+FILE *FileManager::open_file(const std::string &filename, const char *mode) {
+	std::string path = resolve_path(filename);
+	FILE *file = fopen(path.c_str(), mode);
+	if (file == nullptr) {
+		ESP_LOGE(kTag, "Failed to open file stream: %s", path.c_str());
 	}
-	return ESP_OK;
+	return file;
 }
 
-esp_err_t FileManager::print_default_configs() {
-	std::vector<std::string> config_paths = {
-		DefaultConfigs::kDefaultDayNightConfigPath,
-		DefaultConfigs::kDefaultBlinkConfigPath,
-		DefaultConfigs::kDefaultTimelineConfigPath,
-	};
-
-	for (const auto &path : config_paths) {
-		auto content = read_file(path);
-		if (!content.has_value()) {
-			ESP_LOGE(kTAG, "Failed to read default config: %s", path.c_str());
-			return ESP_FAIL;
-		}
-		ESP_LOGI(kTAG, "Content of %s:\n%s", resolve_path(path).c_str(), content.value().c_str());
+void FileManager::close_file(FILE *file) {
+	if (file != nullptr) {
+		fclose(file);
 	}
+}
+
+bool FileManager::read_line(FILE *file, char *buffer, size_t max_len) {
+	if (file == nullptr || buffer == nullptr || max_len == 0) {
+		return false;
+	}
+	return (fgets(buffer, static_cast<int>(max_len), file) != nullptr);
+}
+
+// --- BUFFER METHODEN (Für Chunking von Binärdaten) ---
+
+esp_err_t FileManager::write_buffer(const std::string &filename, const uint8_t *data, size_t len, bool append) {
+	std::string path = resolve_path(filename);
+	if (ensure_directories(path) != ESP_OK) {
+		return ESP_FAIL;
+	}
+
+	FILE * file = fopen(path.c_str(), append ? "ab" : "wb");
+	if (file == nullptr) {
+		return ESP_FAIL;
+	}
+
+	size_t written = 0;
+	written = fwrite(data, 1, len, file);
+	fclose(file);
+	return (written == len) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t FileManager::read_buffer_chunk(const std::string &filename, uint8_t *out_dest, size_t offset, size_t len, size_t *bytes_read) {
+	std::string path = resolve_path(filename);
+	FILE * file = fopen(path.c_str(), "rb");
+	if (file == nullptr) {
+		return ESP_FAIL;
+	}
+
+	fseek(file, static_cast<long>(offset), SEEK_SET);
+	*bytes_read = fread(out_dest, 1, len, file);
+	fclose(file);
 	return ESP_OK;
 }

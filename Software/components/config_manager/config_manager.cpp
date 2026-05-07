@@ -150,7 +150,7 @@ esp_err_t ConfigManager::set_config(const std::string &key, const std::string &v
 	}
 
 	notify_observers(key); // update observers
-	serialize("/config.json");
+	serialize();
 	return ESP_OK;
 }
 
@@ -158,7 +158,7 @@ esp_err_t ConfigManager::set_config(const std::string &key, const std::string &v
 esp_err_t ConfigManager::set_config(ConfigType new_config) {
 	config = std::move(new_config);
 	notify_observers();
-	serialize("/config.json");
+	serialize();
 	return ESP_OK;
 }
 
@@ -193,7 +193,7 @@ esp_err_t ConfigManager::set_to_default(const std::string &key) {
 	}
 	notify_observers();
 	// Always serialize on delete
-	serialize("/config.json");
+	serialize();
 	return ESP_OK;
 }
 
@@ -201,7 +201,7 @@ esp_err_t ConfigManager::set_to_default(const std::string &key) {
 // JSON
 // -----------------
 
-esp_err_t ConfigManager::serialize(const std::string &path) const {
+esp_err_t ConfigManager::serialize() const {
 	std::unique_ptr<cJSON, decltype(&cJSON_Delete)> root(cJSON_CreateObject(), cJSON_Delete);
 
 	if (root == nullptr) {
@@ -218,13 +218,15 @@ esp_err_t ConfigManager::serialize(const std::string &path) const {
 		return ESP_FAIL;
 	}
 
-	return FileManager::save_file(path, json_string.get());
+	return FileManager::save_file(kPath, json_string.get());
 }
 
-esp_err_t ConfigManager::deserialize(const std::string &path) {
-	auto opt_json = FileManager::read_file(path);
+esp_err_t ConfigManager::deserialize() {
+	auto opt_json = FileManager::read_file(kPath);
 
 	if (!opt_json) {
+		// Read failed
+		ESP_LOGW(kTag, "Read failed");
 		return ESP_FAIL;
 	}
 

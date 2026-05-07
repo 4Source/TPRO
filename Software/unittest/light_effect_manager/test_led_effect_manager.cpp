@@ -1,4 +1,4 @@
-#include "blinking_effect.hpp"
+#include "effect/blinking_effect.hpp"
 #include "light_effect_manager.hpp"
 #include <gtest/gtest.h>
 
@@ -16,7 +16,7 @@ TEST(LightEffectManagerTest, VerifiesExternalFrameUpdate) {
 	manager.set_effect(blink);
 
 	// gerade sekunde -> weiß
-	DateTime t_on;
+	TimeComponents t_on;
 	t_on.second = 2;
 	manager.run(t_on);
 
@@ -26,7 +26,7 @@ TEST(LightEffectManagerTest, VerifiesExternalFrameUpdate) {
 	EXPECT_EQ(main_frame.led_data[0][0].blue, 255);
 
 	// Ungerade sekunde -> schwarz
-	DateTime t_off;
+	TimeComponentsonentsonents t_off;
 	t_off.second = 3;
 	manager.run(t_off);
 

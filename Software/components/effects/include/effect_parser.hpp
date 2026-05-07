@@ -25,8 +25,9 @@ struct EffectParser {
 
 		// Standrd-parser
 		if (json_obj_get_string(&json_ctext, "path", path_out, static_cast<int>(path_len)) != OS_SUCCESS) {
-			json_parse_end(&json_ctext);
-			return ESP_FAIL;
+			if (path_len > 0) {
+				path_out[0] = '\0';
+			}
 		}
 
 		// Spezial-Parser

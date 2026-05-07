@@ -20,6 +20,8 @@ export function useWebSocket(totalLeds: number): string[] {
 			let i = 0;
 			for (let led = 0; led < totalLeds; led++) {
 				newColors[led] = `rgb(${view[i++]}, ${view[i++]}, ${view[i++]})`;
+				console.log('LED', led);
+				console.log('Farbe', view[led]);
 			}
 			setLedColors(newColors);
 		};

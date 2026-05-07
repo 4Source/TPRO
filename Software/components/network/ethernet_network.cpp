@@ -54,6 +54,16 @@ EventGroupHandle_t EthernetNetwork::s_eth_event_group = xEventGroupCreate();
 esp_err_t EthernetNetwork::init() {
 	ESP_LOGI(kTag, "Setup ethernet connection...");
 
+	// Hardware Reset erzwingen
+	gpio_reset_pin((gpio_num_t)CONFIG_ETHERNET_RST_GPIO);
+	gpio_set_direction((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, GPIO_MODE_OUTPUT);
+	ESP_LOGI(kTag, "Pull RST pin LOW to reset ethernet chip");
+	gpio_set_level((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, 0);
+	vTaskDelay(pdMS_TO_TICKS(200));
+	ESP_LOGI(kTag, "Pull RST pin HIGH to reset ethernet chip");
+	gpio_set_level((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, 1);
+	vTaskDelay(pdMS_TO_TICKS(500)); // Wartezeit nach Reset
+
 	esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_ETH();
 	esp_netif_t *eth_netif = esp_netif_new(&netif_config);
 
@@ -170,7 +180,7 @@ esp_err_t EthernetNetwork::init_spi(spi_device_interface_config_t *device_config
 	device_config->command_bits = 16;
 	device_config->address_bits = 8;
 	device_config->mode = 0;
-	device_config->clock_speed_hz = 40 * 1000 * 1000; // 40 MHz (80 MHz would be the maximum W5500 supports but maybe unstable)
+	device_config->clock_speed_hz = 10 * 1000 * 1000; // 40 MHz (80 MHz would be the maximum W5500 supports but maybe unstable)
 	device_config->spics_io_num = CONFIG_ETHERNET_SPI_CS_GPIO;
 	device_config->queue_size = 20;
 

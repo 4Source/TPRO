@@ -11,8 +11,8 @@
 static uint16_t log_counter = 0;
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
-LightEffectManager::LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager, TimeApi *time_api)
-	: data(external_frame), config_manager(config_manager), time_api(time_api) {}
+LightEffectManager::LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager)
+	: data_(external_frame), config_manager_(config_manager) {}
 
 // ============================================================
 // Effektverwaltung
@@ -23,7 +23,7 @@ esp_err_t LightEffectManager::set_effect(const std::shared_ptr<Effect> &effect) 
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	current_effect = effect;
+	current_effect_ = effect;
 	return ESP_OK;
 }
 
@@ -36,7 +36,7 @@ esp_err_t LightEffectManager::set_effect(const std::string &path) {
 	// - Effekt wurde mit register_effect(...) registriert
 	// - Effekt liefert sinnvollen Pfad über get_filepath()
 
-	for (const std::shared_ptr<Effect> &effect : available_effects) {
+	for (const std::shared_ptr<Effect> &effect : available_effects_) {
 		if (effect == nullptr) {
 			continue;
 		}
@@ -47,7 +47,7 @@ esp_err_t LightEffectManager::set_effect(const std::string &path) {
 		}
 
 		if (effect_path == path) {
-			current_effect = effect;
+			current_effect_ = effect;
 			return ESP_OK;
 		}
 	}
@@ -60,13 +60,15 @@ esp_err_t LightEffectManager::register_effect(const std::shared_ptr<Effect> &eff
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	auto iterator = std::ranges::find(available_effects, effect);
-	if (iterator != available_effects.end()) {
-		ESP_LOGW("light-effect-manager", "Effect already registered: %s", effect->get_filepath().c_str());
+	auto iterator = std::ranges::find(available_effects_, effect);
+	if (iterator != available_effects_.end()) {
+		ESP_LOGW(kTag, "Effect already registered: '%s' from '%s'", effect->get_name().c_str(), effect->get_filepath().c_str());
 		return ESP_OK; // schon vorhanden
 	}
 
-	available_effects.push_back(effect);
+	ESP_LOGI(kTag, "Registered effect: '%s' from '%s'", effect->get_name().c_str(), effect->get_filepath().c_str());
+
+	available_effects_.push_back(effect);
 	return ESP_OK;
 }
 
@@ -75,29 +77,29 @@ esp_err_t LightEffectManager::unregister_effect(const std::shared_ptr<Effect> &e
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	auto iterator = std::ranges::find(available_effects, effect);
-	if (iterator == available_effects.end()) {
+	auto iterator = std::ranges::find(available_effects_, effect);
+	if (iterator == available_effects_.end()) {
 		return ESP_ERR_NOT_FOUND;
 	}
 
-	if (current_effect == effect) {
-		current_effect = nullptr;
+	if (current_effect_ == effect) {
+		current_effect_ = nullptr;
 	}
 
-	available_effects.erase(iterator);
+	available_effects_.erase(iterator);
 	return ESP_OK;
 }
 
 std::shared_ptr<Effect> LightEffectManager::get_effect(const std::string &path) {
-	auto iterator = std::ranges::find_if(available_effects, [&path](const auto &effect) { return effect && effect->get_filepath() == path; });
+	auto iterator = std::ranges::find_if(available_effects_, [&path](const auto &effect) { return effect && effect->get_filepath() == path; });
 
-	if (iterator != available_effects.end()) {
+	if (iterator != available_effects_.end()) {
 		return *iterator;
 	}
 	// Gibt es noch nicht, versuche zu erzeugen
 	auto new_effect = EffectFactory::generate_from_json(path);
 	if (new_effect) {
-		available_effects.push_back(new_effect);
+		available_effects_.push_back(new_effect);
 		return new_effect;
 	}
 
@@ -108,39 +110,46 @@ std::shared_ptr<Effect> LightEffectManager::get_effect(const std::string &path) 
 // Update-Logik
 // ============================================================
 
-esp_err_t LightEffectManager::run(const DateTime &time_stamp) {
-	if (current_effect == nullptr) {
+esp_err_t LightEffectManager::run() {
+	auto time_stamp = DateTime::get_now();
+
+	if (current_effect_ == nullptr) {
 		ESP_LOGW(kTag, "current_effect is NULL!");
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	std::unique_ptr<LedFrame> new_frame = current_effect->get_led_data(time_stamp);
+	esp_err_t err = current_effect_->get_led_data(this->working_frame_, time_stamp);
 
-	if (!new_frame) {
-		ESP_LOGW(kTag, "Effect returned null frame for timestamp %u-%02u-%02u %02u:%02u:%02u", time_stamp.year, time_stamp.month, time_stamp.day,
-				 time_stamp.hour, time_stamp.minute, time_stamp.second);
-		return ESP_ERR_NO_MEM;
+	if (err != ESP_OK) {
+		ESP_LOGW(kTag, "Effect returned error code %d for timestamp %u-%02u-%02u %02u:%02u:%02u", err, time_stamp.year, time_stamp.month,
+				 time_stamp.day, time_stamp.hour, time_stamp.minute, time_stamp.second);
+		return err;
 	}
 
 	if (log_counter % 500 == 0) {
 		ESP_LOGI(kTag, "Effect generated new frame for timestamp %u-%02u-%02u %02u:%02u:%02u", time_stamp.year, time_stamp.month, time_stamp.day,
 				 time_stamp.hour, time_stamp.minute, time_stamp.second);
-		ESP_LOGI(kTag, "New frame data (first LED): R=%d G=%d B=%d", new_frame->led_data[0][0].red, new_frame->led_data[0][0].green,
-				 new_frame->led_data[0][0].blue);
+		ESP_LOGI(kTag, "New frame data_ (first LED): R=%d G=%d B=%d", this->working_frame_.led_data[0][0].red,
+				 this->working_frame_.led_data[0][0].green, this->working_frame_.led_data[0][0].blue);
 	}
 
 	bool frame_changed = false;
-	{
-		LedFrame::ScopedWriteLock write_lock(data);
+	if (log_counter % 30 == 0) {
+		frame_changed = true;
+	}
 
-		// LED-Daten vergleichen und kopieren
-		if (data.led_data != new_frame->led_data) {
-			data.copy_data_from(*new_frame);
+	{
+		LedFrame::ScopedWriteLock write_lock(data_);
+
+		uint32_t hash_new = this->working_frame_.hash();
+		uint32_t hash_old = data_.hash();
+
+		if (hash_new != hash_old) {
+			data_.copy_data_from(this->working_frame_);
 			frame_changed = true;
 		}
 	}
 
-	// Tasks aufwecken nur bei Änderungen
 	if (frame_changed) {
 		if (TaskHandle::x_websocket_task_handle != nullptr) {
 			xTaskNotifyGive(TaskHandle::x_websocket_task_handle);
@@ -153,60 +162,29 @@ esp_err_t LightEffectManager::run(const DateTime &time_stamp) {
 	return ESP_OK;
 }
 
-esp_err_t LightEffectManager::run() { // NOLINT(readability-convert-member-functions-to-static) because there is no real implementation
-	// ==========================================================
-	// TODO: Spätere TimeApi-Integration
-	//
-	// Sobald TimeApi implementiert wurde,
-	// kann diese Methode z. B. so erweitert werden:
-	//
-	// 1. Prüfen, ob time_api gesetzt ist
-	// 2. Aktuelle Zeit über time_api anfragen
-	// 3. In DateTime umwandeln
-	// 4. run(date_time) aufrufen
-	//
-	//
-	//
-	// if (time_api == nullptr) {
-	//   return ESP_ERR_INVALID_STATE;
-	// }
-	//
-	// auto result = time_api->request();
-	// if (!result.valid) {
-	//   return ESP_FAIL;
-	// }
-	//
-	// return run(result.date_time);
-	// ==========================================================
-
-	return ESP_ERR_NOT_SUPPORTED;
-}
-
 // ============================================================
 // System-Anbindung & Konfiguration
 // ============================================================
 
 void LightEffectManager::set_config_manager(ConfigManager *manager) {
-	if (config_manager != nullptr) {
-		config_manager->remove_observer("current_effect", *this);
+	if (config_manager_ != nullptr) {
+		config_manager_->remove_observer("current_effect", *this);
 	}
 
-	config_manager = manager;
+	config_manager_ = manager;
 
-	if (config_manager != nullptr) {
-		config_manager->add_observer("current_effect", *this);
+	if (config_manager_ != nullptr) {
+		config_manager_->add_observer("current_effect", *this);
 	}
 }
 
-void LightEffectManager::set_time_api(TimeApi *api) { time_api = api; }
-
 void LightEffectManager::update(const std::string &key) {
-	if (config_manager == nullptr) {
+	if (config_manager_ == nullptr) {
 		return;
 	}
 
 	if (key == "current_effect") {
-		auto path = config_manager->get_config("current_effect");
+		auto path = config_manager_->get_config("current_effect");
 		set_effect(path);
 	}
 }
@@ -217,9 +195,9 @@ void LightEffectManager::update(const std::vector<std::string> &keys) {
 	}
 }
 
-void LightEffectManager::set_speed(float new_speed) { speed = new_speed; }
+void LightEffectManager::set_speed(float new_speed) { speed_ = new_speed; }
 
-float LightEffectManager::get_speed() const { return speed; }
+float LightEffectManager::get_speed() const { return speed_; }
 
 esp_err_t LightEffectManager::start() {
 	if (TaskHandle::x_light_effect_manager_task_handle != nullptr) {
@@ -239,10 +217,10 @@ void LightEffectManager::effect_task(void *arg) {
 		float current_speed = manager->get_speed();
 		current_speed = std::max(current_speed, 0.01F);
 		// ca. 30 FPS bei speed = 1.0f aktuell
-		auto delay_ms = static_cast<uint32_t>(33.0F / current_speed);
+		auto fps = 30.0F;
+		auto delay_ms = static_cast<uint32_t>((1000.0F / fps) / current_speed);
 
-		DateTime current_time{};
-		manager->run(current_time);
+		manager->run();
 		if (log_counter % 500 == 0) {
 			ESP_LOGI(kTag, "Effect task running at speed %.2f with delay %d ms", current_speed, delay_ms);
 		}

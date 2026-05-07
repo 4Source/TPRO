@@ -5,15 +5,17 @@ message(STATUS "-------------------------------------------------------")
 
 # KConfig Led aktiv sonst nichts registrieren
 set(srcs "")
-set(requires "")
+set(requires task_handles
+        esp_driver_rmt
+        esp_hal_rmt
+        driver
+        esp_driver_gpio)
 set(include_dirs include)
 
 if(CONFIG_ENABLE_LED)
-    set(srcs "")
-    set(requires 
-        driver
-        esp_driver_gpio
-    )
+    set(srcs "led_controller.cpp"
+        "led_frame.cpp"
+        "led_strip_encoder.cpp")
 endif()
 
 message(STATUS "Configure led component: ")

@@ -1,39 +1,34 @@
 #pragma once
+#include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <string>
 #include <sys/time.h>
 
-// Timestamp
-struct DateTime {
-	uint16_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t hour;
-	uint8_t minute;
-	uint8_t second;
+class DateTime {
+  public:
+	// Kein Konstruktor nötig, da rein statische Utility-Klasse
+	DateTime() = delete;
+
+	// Timestamp
+	struct TimeComponents {
+		uint16_t year;
+		uint8_t month, day, hour, minute, second;
+		uint16_t millisecond;
+	};
 
 	/**
-	 * Creates a DateTime object with the current time
+	 * Gibt die aktuelle Zeit als String im Format 'dd.mm.yyyy hh:mm:ss.ms' zurück
 	 */
-	DateTime();
+	[[nodiscard]] static std::string to_string();
 
 	/**
-	 * Creates a DateTime object with the given values
+	 * Formatiert spezifische TimeComponents als String
 	 */
-	DateTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
+	[[nodiscard]] static std::string format(const TimeComponents &comps);
 
 	/**
-	 * Creates a DateTime object with the given time
+	 * Gibt die aktuelle Zeit als TimeComponents zurück
 	 */
-	DateTime(time_t time);
-
-	/**
-	 * Creates a DateTime object from a sting which is formatted as 'dd.mm.yyyy hh:mm:ss'
-	 */
-	DateTime(const std::string &time_string);
-
-	/**
-	 * Returns the DateTime formatted as 'dd.mm.yyyy hh:mm:ss'
-	 */
-	[[nodiscard]] std::string to_string() const;
+	static TimeComponents get_now();
 };

@@ -1,8 +1,11 @@
-#include "blinking_effect.hpp"
 #include "config_manager.hpp"
-#include "default_configs.hpp"
+#include "esp_heap_caps.h"
+#include "esp_system.h"
 #include "file_manager.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "https_server.hpp"
+#include "led_controller.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
 #include "restserver.hpp"
@@ -13,6 +16,25 @@
 #include <nvs_flash.h>
 #include <optional>
 
+// TEST Effekte
+#include "effect/blinking_effect.hpp"
+#include "effect/breathing_effect.hpp"
+#include "effect/color_wipe_effect.hpp"
+#include "effect/column_scan_effect.hpp"
+#include "effect/continent_effect.hpp"
+#include "effect/day_night_effect.hpp"
+#include "effect/debug_effect.hpp"
+#include "effect/dvd_effect.hpp"
+#include "effect/equalizer_effect.hpp"
+#include "effect/fire_effect.hpp"
+#include "effect/matrix_effect.hpp"
+#include "effect/plasma_effect.hpp"
+#include "effect/rainbow_wave_effect.hpp"
+#include "effect/row_scan_effect.hpp"
+#include "effect/scrolling_effect.hpp"
+#include "effect/static_color_effect.hpp"
+#include "effect/timeline_effect.hpp"
+
 static constexpr const char *kTag = "main";
 
 // TODO: Muss wirklich alles davon global sein?
@@ -21,8 +43,32 @@ std::optional<WebsocketServer> g_ws_server;
 static LedFrame main_frame;
 static ConfigManager main_config;
 static LightEffectManager effect_manager(main_frame /*, &main_config*/);
+static LedController controller(main_frame);
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
+static constexpr const char *kMonitorTag = "MONITOR";
+
+void system_monitor_task(void *pv_parameter) {
+
+	while (true) {
+		ESP_LOGI(kMonitorTag, "================ SYSTEM MONITOR ================");
+
+		// 1. Allgemeiner RAM (Dein Snippet)
+		ESP_LOGI(kMonitorTag, "Free Heap:       %.1f KB", static_cast<float>(esp_get_free_heap_size()) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Largest Block:   %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)) / 1024.0F);
+
+		// 2. DMA-fähiger RAM (Wichtig für dein SPI/Display)
+		ESP_LOGI(kMonitorTag, "Free DMA RAM:    %.1f KB", static_cast<float>(heap_caps_get_free_size(MALLOC_CAP_DMA)) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Largest DMA:     %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_DMA)) / 1024.0F);
+
+		UBaseType_t stack_watermark = uxTaskGetStackHighWaterMark(nullptr);
+		ESP_LOGI(kMonitorTag, "Monitor Stack:   %lu Bytes free", static_cast<uint32_t>(stack_watermark * 4));
+
+		ESP_LOGI(kMonitorTag, "================================================");
+
+		vTaskDelay(pdMS_TO_TICKS(60000));
+	}
+}
 /**
  * Needs to be initialized once per app. Will allow persistent storage in the flash.
  *
@@ -102,44 +148,57 @@ extern "C" void app_main(void) {
 
 	init_timeserver();
 
+	vTaskDelay(1000);
+
 	// Run Selftest for FileManager
 	if (FileManager::run_selftest() != ESP_OK) {
-		ESP_LOGE("main", "File manager self-test failed");
+		ESP_LOGE(kTag, "File manager self-test failed");
 		return;
 	}
-	FileManager::write_default_configs();
-	FileManager::print_default_configs();
+	EffectFactory::writeDefaults("/effects/defaults");
+	// FileManager::print_default_configs(); Sollte später alle defaults ausprinten
 
-	// Load Configuration from SD Card
-	if (main_config.deserialize("/config.json") != ESP_OK) {
-		ESP_LOGW(kTag, "Failed to load /config.json, creating default config.");
-		main_config.serialize("/config.json");
-	}
+	// // Load Configuration from SD Card
+	// if (main_config.deserialize() != ESP_OK) {
+	// 	ESP_LOGW(kTag, "Failed to load /config.json, creating default config.");
+	// 	main_config.serialize();
+	// }
 
 	// Start Effect
-	std::string current_effect_path = main_config.get_config("current_effect");
-	if (current_effect_path.empty()) {
-		current_effect_path = DefaultConfigs::kDefaultBlinkConfigPath;
-		main_config.set_config("current_effect", current_effect_path);
-	}
+	// std::string current_effect_path = ColumnScanEffect::kDefaultConfigPath;
+	// std::string current_effect_path = RowScanEffect::kDefaultConfigPath;
 
-	auto effect = effect_manager.get_effect(current_effect_path);
-	if (effect) {
-		effect_manager.register_effect(effect);
-		effect_manager.set_effect(effect);
-		effect_manager.start();
-	} else {
-		ESP_LOGE(kTag, "Failed to start initial effect: %s", current_effect_path.c_str());
-	}
+	vTaskDelay(100);
+	// Effekt Test
+	/*
+	auto scrolling_effect = std::make_shared<ScrollingEffect>();
+	scrolling_effect->set_parameter("text", "Hello World! This is a scrolling text effect demo. :)");
+*/
 
-	// Test Blink
-	auto blink_effect = effect_manager.get_effect(DefaultConfigs::kDefaultBlinkConfigPath);
-	effect_manager.register_effect(blink_effect);
-	effect_manager.set_effect(blink_effect);
+	// TODO:
+	// auto main_timeline = EffectFactory::generate_from_json(DVDEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
+	// auto main_timeline = EffectFactory::generate_from_json(FireEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
+
+	// auto main_timeline = EffectFactory::generate_from_json(EqualizerEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
+
+	// auto main_timeline = EffectFactory::generate_from_json(ContinentEffect::kDefaultConfigPath);
+	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_continent.json");
+	auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_full.json");
+	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
+	effect_manager.register_effect(main_timeline);
+	effect_manager.set_effect(main_timeline);
 	effect_manager.start();
 
+	vTaskDelay(100);
+	// Start the Led controller task
+	if (controller.run() != ESP_OK) {
+		ESP_LOGE(kTag, "Failed to setup the LED controller!");
+	}
+
+	// Starte Monitor Task
+	xTaskCreatePinnedToCore(system_monitor_task, "sys_monitor", 4096, nullptr, 1, nullptr, tskNO_AFFINITY);
+
 	while (true) {
-		// Delay to simulate load
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}
 }

@@ -1,0 +1,65 @@
+menu "LED configuration"
+
+    # Import target specific environment variables
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+    
+    config LED_COLUMNS
+        int "Number of LEDs in a column"
+        range 1 1024
+        default 87
+
+    config LED_CH1_GPIO
+        int "LED GPIO number for Channel 1"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 35
+    
+    config LED_CH1_ROWS
+        int "Number of LEDs stripes connected to Channel 1"
+        range 1 1024
+        default 12
+
+    config LED_CH2_GPIO
+        int "LED GPIO number for Channel 2"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 36
+    
+    config LED_CH2_ROWS
+        int "Number of LEDs stripes connected to Channel 2"
+        range 1 1024
+        default 11
+
+    config LED_CH3_GPIO
+        int "LED GPIO number for Channel 3"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 37
+    
+    config LED_CH3_ROWS
+        int "Number of LEDs stripes connected to Channel 3"
+        range 1 1024
+        default 12
+
+    config LED_STRIP_RESOLUTION_HZ 
+        int "Resolution of the internal tick counter"
+        default 10000000
+
+    config LED_STRIP_T0H
+        float "Duration of the T0H signal in ns"
+        default 300.0
+
+    config LED_STRIP_T0L
+        float "Duration of the T0L signal in ns"
+        default 900.0
+
+    config LED_STRIP_T1H
+        float "Duration of the T1H signal in ns"
+        default 900.0
+
+    config LED_STRIP_T1L
+        float "Duration of the T1L signal in ns"
+        default 300.0
+
+    config LED_STRIP_RES
+        float "Duration of the reset signal in ns"
+        default 280000.0
+
+endmenu
