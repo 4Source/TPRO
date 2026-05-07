@@ -64,11 +64,11 @@ class FileManager {
 	 */
 	template <size_t N> static esp_err_t read_file_chunked(const std::string &filename, const std::function<esp_err_t(const char *, int)> &on_chunk) {
 		std::string path = resolve_path(filename);
-		ESP_LOGI(kTAG, "Reading chunked file: %s", path.c_str());
+		ESP_LOGI(kTag, "Reading chunked file: %s", path.c_str());
 
 		std::ifstream file(path);
 		if (!file.is_open()) {
-			ESP_LOGE(kTAG, "Failed to open file for reading: %s", path.c_str());
+			ESP_LOGE(kTag, "Failed to open file for reading: %s", path.c_str());
 			return ESP_FAIL;
 		}
 
@@ -129,8 +129,21 @@ class FileManager {
 	 */
 	static esp_err_t run_selftest();
 
-	static esp_err_t write_default_configs();
-	static esp_err_t print_default_configs();
+	/**
+	 * Wählt eine zufällige .json Datei aus dem angegebenen Verzeichnis aus.
+	 * @param directory_path Das Verzeichnis (Standard: "/effects")
+	 * @return Den vollständigen Pfad zur zufälligen Datei oder std::nullopt, falls keine gefunden wurde.
+	 */
+	static std::optional<std::string> get_random_effect_path();
+
+	// 1. Buffer-basiert (für Binärdaten, Firmware-Updates, Netzwerk-Chunks)
+	static esp_err_t write_buffer(const std::string &filename, const uint8_t *data, size_t len, bool append = true);
+	static esp_err_t read_buffer_chunk(const std::string &filename, uint8_t *out_dest, size_t offset, size_t len, size_t *bytes_read);
+
+	// 2. Stream-basiert (für ArduinoJson & zeilenweises Einlesen)
+	static FILE *open_file(const std::string &filename, const char *mode);
+	static void close_file(FILE *f);
+	static bool read_line(FILE *f, char *buffer, size_t max_len);
 
   private:
 	/**
@@ -141,7 +154,7 @@ class FileManager {
 	 */
 	static std::string resolve_path(const std::string &path);
 
-	static constexpr const char *kTAG = "file-manager";
+	static constexpr const char *kTag = "file-manager";
 	static constexpr const char *kMountPoint = "/sdcard";
 	static sdmmc_card_t *card;
 	static spi_host_device_t host_slot;

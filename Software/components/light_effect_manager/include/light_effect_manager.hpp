@@ -14,13 +14,12 @@
 // Diese Klassen werden später von anderen Teammitgliedern
 // implementiert, hier nur als Platzhalter referenziert.
 class ConfigManager;
-class TimeApi;
 
 // Verwaltet den aktuellen Effekt, erzeugt LED-Daten und gibt
 // diese über eine Schnittstelle an den späteren Output Layer.
 class LightEffectManager : public ConfigObserver {
   public:
-	LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager = nullptr, TimeApi *time_api = nullptr);
+	LightEffectManager(LedFrame &external_frame, ConfigManager *config_manager = nullptr);
 	~LightEffectManager() override = default;
 
 	LightEffectManager(const LightEffectManager &) = delete;
@@ -41,15 +40,12 @@ class LightEffectManager : public ConfigObserver {
 	std::shared_ptr<Effect> get_effect(const std::string &path);
 
 	// Update-Logik
-	esp_err_t run(const DateTime &time_stamp);
-
 	esp_err_t run();
 
 	esp_err_t start();
 
 	// System-Anbindung & Konfiguration
 	void set_config_manager(ConfigManager *config_manager);
-	void set_time_api(TimeApi *time_api);
 
 	// Observer Interface
 	void update(const std::string &key) override;
@@ -61,13 +57,13 @@ class LightEffectManager : public ConfigObserver {
 
   private:
 	static constexpr const char *kTag = "light-effect-manager";
-	LedFrame &data;
-	ConfigManager *config_manager = nullptr;
-	std::shared_ptr<Effect> current_effect = nullptr;
-	float speed = 1.0F;
-	TimeApi *time_api = nullptr; // später nutzen
+	LedFrame &data_;
+	LedFrame working_frame_;
+	ConfigManager *config_manager_ = nullptr;
+	std::shared_ptr<Effect> current_effect_ = nullptr;
+	float speed_ = 1.0F;
 
-	std::vector<std::shared_ptr<Effect>> available_effects;
+	std::vector<std::shared_ptr<Effect>> available_effects_;
 
 	static void effect_task(void *arg);
 };

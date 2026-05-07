@@ -23,7 +23,7 @@ void time_received(struct timeval *timeval) {
 	// time has been synchronized
 	g_time_synchronized = true;
 
-	ESP_LOGI(kTag, "Time synchronized successfully %s", DateTime{}.to_string().c_str());
+	ESP_LOGI(kTag, "Time synchronized successfully %s", DateTime::to_string().c_str());
 }
 
 void init_timeserver() {

@@ -35,7 +35,7 @@
         {
             "label": "ESP-IDF: OpenOCD (USB JTAG)",
             "type": "shell",
-            "command": "/usr/local/bin/esp-lock /dev/ttyACM1 bash -c 'exec openocd -f board/esp32s3-builtin.cfg'",
+            "command": "/usr/local/bin/esp-lock /dev/ttyACM1 bash -c 'exec openocd -f board/esp32s3-builtin.cfg -c \"adapter usb location 1-3\"'",
             "isBackground": true,
             "problemMatcher": [
                 {

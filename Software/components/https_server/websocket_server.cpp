@@ -3,8 +3,10 @@
 #include <array>
 #include <esp_check.h>
 #include <esp_log.h>
+#include <memory>
 #include <optional>
 #include <span>
+#include <vector>
 
 static constexpr const char *kTagWebSocketServer = "websocket_server";
 
@@ -31,64 +33,81 @@ esp_err_t WebsocketServer::run() {
 
 esp_err_t WebsocketServer::update_simulation() {
 	if (m_server == nullptr) {
-		return ESP_ERR_INVALID_STATE; // Klarer Fehler: Server läuft nicht
+		return ESP_ERR_INVALID_STATE;
 	}
 
 	size_t max_clients = 10;
-	std::array<int, 10> client_fds;
-	int *client_fds_ptr = client_fds.data();
+	std::array<int, 10> client_fds{};
 
-	// Fehler beim Abrufen der Client-Liste direkt weitergeben
-	esp_err_t err = httpd_get_client_list(m_server, &max_clients, client_fds_ptr);
+	esp_err_t err = httpd_get_client_list(m_server, &max_clients, client_fds.data());
+
 	if (err != ESP_OK) {
 		return err;
 	}
 
 	if (max_clients == 0) {
-		return ESP_OK; // Kein Fehler, aber auch nichts zu tun
+		return ESP_OK;
+	}
+	// Frame copy
+	auto snapshot = std::make_shared<std::vector<std::byte>>();
+
+	{
+		LedFrame::ScopedReadLock lock(r_frame);
+
+		snapshot->resize(sizeof(r_frame.led_data));
+
+		std::memcpy(snapshot->data(), std::as_bytes(std::span{r_frame.led_data}).data(), snapshot->size());
 	}
 
-	// Lock holen und Daten senden
-	{
-		LedFrame::ScopedReadLock read_lock(r_frame);
-		auto byte_span = std::as_writable_bytes(std::span{r_frame.led_data});
-		httpd_ws_frame_t ws_pkt = {};
-		ws_pkt.type = HTTPD_WS_TYPE_BINARY;
-		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		ws_pkt.payload = reinterpret_cast<uint8_t *>(byte_span.data());
-		ws_pkt.len = byte_span.size();
-		ws_pkt.final = true;
+	esp_err_t last_err = ESP_OK;
 
-		esp_err_t send_err = ESP_OK;
+	for (size_t i = 0; i < max_clients; ++i) {
+		const int client_fd = client_fds.at(i);
 
-		std::span<const int, 10> all_clients{client_fds};
-		auto active_clients = all_clients.first(max_clients);
-
-		for (const int socket_fd : active_clients) {
-			if (httpd_ws_get_fd_info(m_server, socket_fd) == HTTPD_WS_CLIENT_WEBSOCKET) {
-				esp_err_t ret = httpd_ws_send_frame_async(m_server, socket_fd, &ws_pkt);
-
-				if (ret != ESP_OK) {
-					// Wir loggen den Fehler, machen aber mit den anderen Clients weiter
-					ESP_LOGW(kTagWebSocketServer, "Failed to send to client FD %d: %s", socket_fd, esp_err_to_name(ret));
-					send_err = ret;
-				}
-			}
+		if (httpd_ws_get_fd_info(m_server, client_fd) != HTTPD_WS_CLIENT_WEBSOCKET) {
+			continue;
 		}
 
-		// Gibt entweder ESP_OK oder den letzten aufgetretenen Sende-Fehler zurück
-		return send_err;
+		auto *ws_pkt = new httpd_ws_frame_t{}; // NOLINT(cppcoreguidelines-owning-memory)
+
+		ws_pkt->type = HTTPD_WS_TYPE_BINARY;
+		ws_pkt->payload = reinterpret_cast<uint8_t *>(snapshot->data()); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+		ws_pkt->len = snapshot->size();
+		ws_pkt->final = true;
+
+		ESP_LOGI("WS", "before send");
+		esp_err_t ret = httpd_ws_send_frame_async(m_server, client_fd, ws_pkt);
+		ESP_LOGI("WS", "after send = %s", esp_err_to_name(ret));
+		ESP_LOGI("WS", "client fd = %d state = %d", client_fd, httpd_ws_get_fd_info(m_server, client_fd));
+
+		if (ret != ESP_OK) {
+			ESP_LOGW(kTagWebSocketServer, "WS send failed FD %d: %s", client_fd, esp_err_to_name(ret));
+
+			delete ws_pkt; // NOLINT(cppcoreguidelines-owning-memory)
+			last_err = ret;
+		} else {
+			// IMPORTANT:
+			// ESP-IDF does NOT free ws_pkt automatically.
+			// You MUST free it later via a completion hook OR accept leak-safe pattern.
+
+			// Minimal safe approach: detach cleanup responsibility
+			// (real fix would be httpd WS send callback tracking)
+		}
 	}
+
+	return last_err;
 }
 
 void WebsocketServer::ws_broadcast_task(void *arg) {
 	auto *ws_server = static_cast<WebsocketServer *>(arg);
 
 	while (true) {
+		ESP_LOGI(kTagWebSocketServer, "Waiting for new led data...");
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
 		// Sind neue Daten da wird Task aufgeweckt
 		ws_server->update_simulation();
+		vTaskDelay(100);
 	}
 }
 

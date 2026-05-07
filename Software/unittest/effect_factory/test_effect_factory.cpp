@@ -1,8 +1,8 @@
-#include "blinking_effect.hpp"
-#include "day_night_effect.hpp"
+#include "effect/blinking_effect.hpp"
+#include "effect/day_night_effect.hpp"
+#include "effect/timeline_effect.hpp"
 #include "effect_factory.hpp"
 #include "file_manager.hpp" // Dein aktualisierter Mock Header mit mock_fs
-#include "timeline_effect.hpp"
 #include <gtest/gtest.h>
 
 class EffectFactoryTest : public ::testing::Test {

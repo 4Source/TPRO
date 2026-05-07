@@ -27,6 +27,8 @@ class ConfigManager {
 
 	static constexpr const char *kTag = "config-manager";
 
+	static constexpr const char *kPath = "/config.json";
+
   public:
 	ConfigManager();
 
@@ -110,6 +112,6 @@ class ConfigManager {
 	//(DELETE)
 	esp_err_t set_to_default(const std::string &key);
 
-	esp_err_t serialize(const std::string &path) const;
-	esp_err_t deserialize(const std::string &path);
+	esp_err_t serialize() const;
+	esp_err_t deserialize();
 };

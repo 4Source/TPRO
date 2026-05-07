@@ -1,13 +1,13 @@
 #include "datetime.hpp"
 #include <gtest/gtest.h>
 
-TEST(DateTimeTest, DefaultConstructor) {
+TEST(TimeComponentsTest, DefaultConstructor) {
 	time_t now = time(nullptr);
 	struct tm expected{};
 
 	localtime_r(&now, &expected);
 
-	DateTime dt;
+	TimeComponents dt;
 
 	EXPECT_EQ(dt.year, expected.tm_year + 1900);
 	EXPECT_EQ(dt.month, expected.tm_mon + 1);
@@ -19,13 +19,13 @@ TEST(DateTimeTest, DefaultConstructor) {
 	EXPECT_NEAR(dt.second, expected.tm_sec, 1);
 }
 
-TEST(DateTimeTest, FromTimeValid) {
+TEST(TimeComponentsonentsonentsTest, FromTimeValid) {
 	time_t now = time(nullptr);
 	struct tm expected{};
 
 	localtime_r(&now, &expected);
 
-	DateTime dt{now};
+	TimeComponentsonentsonentsonents dt{now};
 
 	EXPECT_EQ(dt.year, expected.tm_year + 1900);
 	EXPECT_EQ(dt.month, expected.tm_mon + 1);
@@ -35,7 +35,8 @@ TEST(DateTimeTest, FromTimeValid) {
 	EXPECT_EQ(dt.second, expected.tm_sec);
 }
 
-TEST(DateTimeTest, FromStringValid) {
+TEST(TimeComponentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsonentsTest,
+	 TimeComponentsponentsponentsonentsingValid) {
 	DateTime dt("15.04.2026 12:34:56");
 
 	EXPECT_EQ(dt.day, 15);
@@ -53,7 +54,7 @@ TEST(DateTimeTest, ToString) {
 }
 
 TEST(DateTimeTest, InvalidString) {
-	DateTime dt("invalid");
+	TimeComponentsonents dt("invalid");
 
 	EXPECT_EQ(dt.day, 0);
 	EXPECT_EQ(dt.month, 0);

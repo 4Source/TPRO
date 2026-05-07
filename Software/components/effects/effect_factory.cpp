@@ -1,6 +1,8 @@
 #include "effect_factory.hpp"
 #include "effect_parser.hpp"
 #include "file_manager.hpp"
+#include <esp_log.h>
+#include <format>
 
 #if defined(UNIT_TEST)
 #include <iostream>
@@ -9,9 +11,44 @@
 #include <cstring>
 
 // Konkrete Effect hier hinzufügen!!!
-#include "blinking_effect.hpp"
-#include "day_night_effect.hpp"
-#include "timeline_effect.hpp"
+#include "effect/blinking_effect.hpp"
+#include "effect/breathing_effect.hpp"
+#include "effect/color_wipe_effect.hpp"
+#include "effect/column_scan_effect.hpp"
+#include "effect/continent_effect.hpp"
+#include "effect/day_night_effect.hpp"
+#include "effect/debug_effect.hpp"
+#include "effect/dvd_effect.hpp"
+#include "effect/equalizer_effect.hpp"
+#include "effect/fire_effect.hpp"
+#include "effect/matrix_effect.hpp"
+#include "effect/plasma_effect.hpp"
+#include "effect/rainbow_wave_effect.hpp"
+#include "effect/row_scan_effect.hpp"
+#include "effect/scrolling_effect.hpp"
+#include "effect/static_color_effect.hpp"
+#include "effect/timeline_effect.hpp"
+
+// Registry
+const std::unordered_map<std::string, EffectCreator> EffectFactory::registry = {
+	{BlinkingEffect::kType, []() { return std::make_shared<BlinkingEffect>(); }},
+	{BreathingEffect::kType, []() { return std::make_shared<BreathingEffect>(); }},
+	{ColorWipeEffect::kType, []() { return std::make_shared<ColorWipeEffect>(); }},
+	{ColumnScanEffect::kType, []() { return std::make_shared<ColumnScanEffect>(); }},
+	{ContinentEffect::kType, []() { return std::make_shared<ContinentEffect>(); }},
+	{DayNightEffect::kType, []() { return std::make_shared<DayNightEffect>(); }},
+	{DebugEffect::kType, []() { return std::make_shared<DebugEffect>(); }},
+	{DVDEffect::kType, []() { return std::make_shared<DVDEffect>(); }},
+	{EqualizerEffect::kType, []() { return std::make_shared<EqualizerEffect>(); }},
+	{FireEffect::kType, []() { return std::make_shared<FireEffect>(); }},
+	{MatrixEffect::kType, []() { return std::make_shared<MatrixEffect>(); }},
+	{PlasmaEffect::kType, []() { return std::make_shared<PlasmaEffect>(); }},
+	{RainbowWaveEffect::kType, []() { return std::make_shared<RainbowWaveEffect>(); }},
+	{RowScanEffect::kType, []() { return std::make_shared<RowScanEffect>(); }},
+	{ScrollingEffect::kType, []() { return std::make_shared<ScrollingEffect>(); }},
+	{StaticColorEffect::kType, []() { return std::make_shared<StaticColorEffect>(); }},
+	{TimelineEffect::kType, []() { return std::make_shared<TimelineEffect>(); }},
+};
 
 std::shared_ptr<Effect> EffectFactory::generate_from_json(std::string path) {
 	type_buffer = {}; // Buffer leeren vor Benutzung
@@ -32,11 +69,6 @@ std::shared_ptr<Effect> EffectFactory::generate_from_json(std::string path) {
 		return nullptr;
 	}
 
-	if (json_obj_get_object(&jctx, "effect") != OS_SUCCESS) {
-		json_parse_end(&jctx);
-		return nullptr;
-	}
-
 	if (json_obj_get_string(&jctx, "type", type_buffer.data(), type_buffer.size()) != OS_SUCCESS) {
 		json_parse_end(&jctx);
 		return nullptr;
@@ -46,25 +78,49 @@ std::shared_ptr<Effect> EffectFactory::generate_from_json(std::string path) {
 	std::cerr << "DEBUG: Extracted type: [" << type_buffer.data() << "]" << std::endl;
 #endif
 
-	std::shared_ptr<Effect> effect = nullptr;
-
-	if (strcmp(type_buffer.data(), "day_night") == 0) {
-		effect = std::make_shared<DayNightEffect>();
-	} else if (strcmp(type_buffer.data(), "blink") == 0) {
-		effect = std::make_shared<BlinkingEffect>();
-	} else if (strcmp(type_buffer.data(), "timeline") == 0) {
-		effect = std::make_shared<TimelineEffect>();
-	} else {
-		// Unbekannter Effekt-Typ
+	auto iterator = registry.find(type_buffer.data());
+	if (iterator == registry.end()) {
 		json_parse_end(&jctx);
 		return nullptr;
 	}
 
+	std::shared_ptr<Effect> effect = iterator->second();
+
 	json_parse_end(&jctx);
 
 	if (effect) {
-		effect->deserialize(std::move(path));
+		if (effect->deserialize(std::move(path)) != ESP_OK) {
+			ESP_LOGE(kTag, "Failed to deserialize the effect");
+		}
 	}
 
 	return effect;
+}
+
+esp_err_t EffectFactory::writeDefaults(const std::string &directory) {
+	esp_err_t result = ESP_OK;
+
+	for (const auto &[name, creator] : registry) {
+		std::string path = std::format("{}/{}.json", directory, name);
+		ESP_LOGI(kTag, "Check if effect config is available: %s", path.c_str());
+
+		if (FileManager::is_file(path) == ESP_OK) {
+			continue;
+		}
+
+		auto effect = creator();
+		ESP_LOGI(kTag, "Created effect: %s", name.c_str());
+
+		if (!effect) {
+			result = ESP_FAIL;
+			continue;
+		}
+
+		esp_err_t err = effect->serialize();
+		if (err != ESP_OK) {
+			result = err;
+		}
+	}
+
+	return result;
 }

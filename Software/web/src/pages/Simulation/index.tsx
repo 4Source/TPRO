@@ -7,6 +7,7 @@ import { useTps } from './hooks/useTps';
 import { SettingsMenu } from './components/SettingsMenu';
 import { MatrixViewer } from './components/MatrixViewer';
 import { TimeControls } from './components/TimeControls';
+import { computeLedContinentMapping, CONTINENT_DEFAULTS } from '../../continent-mapping';
 
 export function Simulation() {
 	const ledColors = useWebSocket(TOTAL_LEDS);
@@ -46,16 +47,29 @@ export function Simulation() {
 			return;
 		}
 		setIsCalculating(true);
-		setTimeout(() => {
+		setTimeout(async () => {
 			const newData: LedData[] = [];
 			for (let row = 0; row < ROWS; row++) {
 				for (let col = 0; col < COLS; col++) {
+					const index = (row * COLS) + col;
 					const mmX = PADDING_X + ((col / (COLS - 1)) * LED_WIDTH);
 					const mmY = PADDING_Y + ((row / (ROWS - 1)) * LED_HEIGHT);
 					const [lon, lat] = tps.transform(mmX, mmY);
-					newData.push({ index: (row * COLS) + col, col, row, mmX, mmY, lon, lat });
+					const continents = Object.assign({}, CONTINENT_DEFAULTS);
+					newData.push({ index, col, row, mmX, mmY, lon, lat, continents });
 				}
 			}
+
+			const continents_mapping = await computeLedContinentMapping(newData.map(v => {
+				return { index: v.index, x: v.mmX, y: v.mmY };
+			}));
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {
+					const index = (row * COLS) + col;
+					newData[index].continents = Object.assign({}, CONTINENT_DEFAULTS, continents_mapping[index]);
+				}
+			}
+
 			setGridData(newData);
 			setIsCalculating(false);
 		}, 100);
@@ -78,6 +92,7 @@ export function Simulation() {
 				mmY: parseFloat(d.mmY.toFixed(2)),
 				lon: parseFloat(d.lon.toFixed(5)),
 				lat: parseFloat(d.lat.toFixed(5)),
+				continents: d.continents,
 			})),
 		};
 		const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });

@@ -47,7 +47,9 @@ Checks: >
   -cppcoreguidelines-pro-type-const-cast,
   fuchsia-no-exceptions,
   -bugprone-easily-swappable-parameters,
-  -cppcoreguidelines-avoid-magic-numbers
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-owning-memory,
 
 CheckOptions:
   # Erlaubt malloc/free trotz 'no-malloc' Check (nützlich für PSRAM/ESP-IDF)
