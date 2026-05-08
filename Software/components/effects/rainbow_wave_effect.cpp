@@ -93,42 +93,34 @@ esp_err_t RainbowWaveEffect::set_parameter(const char *name, const char *value) 
 // -----------------
 esp_err_t RainbowWaveEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.default_brightness", &tmp) == 0) {
-			default_brightness_.value = static_cast<uint8_t>(tmp);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &tmp) == 0) {
-			cycle_time_.value = static_cast<uint32_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
+		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
+		cycle_time_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.scale", &tmp) == 0) {
-			scale_.value = static_cast<uint8_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.led_range_start", &tmp) == 0) {
-			led_range_start_.value = static_cast<uint32_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "scale"); cJSON_IsNumber(item))
+		scale_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.led_range_end", &tmp) == 0) {
-			led_range_end_.value = static_cast<uint32_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_start"); cJSON_IsNumber(item))
+		led_range_start_.value = static_cast<uint32_t>(item->valuedouble);
 
-		return ESP_OK;
-	});
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_end"); cJSON_IsNumber(item))
+		led_range_end_.value = static_cast<uint32_t>(item->valuedouble);
+
+	return ESP_OK;
 }
 
 esp_err_t RainbowWaveEffect::serialize() {

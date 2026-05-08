@@ -1,5 +1,6 @@
 {
 	"private": true,
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "concurrently --names 'api,vite' 'npm run dev-api' 'npm run dev-web'",

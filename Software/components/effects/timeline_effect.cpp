@@ -440,6 +440,11 @@ esp_err_t TimelineEffect::serialize() {
 		cJSON_AddItemToArray(subeffects, sub_obj);
 	}
 
+	// Schema markiert timeline als speziellen Typ ohne reguläre Parameter
+	auto *schema = cJSON_AddObjectToObject(root.get(), "schema");
+	auto *schema_type_obj = cJSON_AddObjectToObject(schema, "_type");
+	cJSON_AddStringToObject(schema_type_obj, "type", "timeline");
+
 	EffectParser::cJSON_str_ptr json_string(cJSON_PrintUnformatted(root.get()), free);
 	return FileManager::save_file(this->path_, json_string.get());
 }

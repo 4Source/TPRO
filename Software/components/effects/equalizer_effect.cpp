@@ -103,38 +103,31 @@ esp_err_t EqualizerEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t EqualizerEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp_val = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.decay", &tmp_val) == 0) {
-			decay_.value = static_cast<uint8_t>(tmp_val);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp_val) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "decay"); cJSON_IsNumber(item))
+		decay_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.scale", &tmp_val) == 0) {
-			scale_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.led_range_start", &tmp_val) == 0) {
-			led_range_start_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "scale"); cJSON_IsNumber(item))
+		scale_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.led_range_end", &tmp_val) == 0) {
-			led_range_end_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_start"); cJSON_IsNumber(item))
+		led_range_start_.value = static_cast<uint32_t>(item->valuedouble);
 
-		return ESP_OK;
-	});
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_end"); cJSON_IsNumber(item))
+		led_range_end_.value = static_cast<uint32_t>(item->valuedouble);
+
+	return ESP_OK;
 }
 
 esp_err_t EqualizerEffect::serialize() {

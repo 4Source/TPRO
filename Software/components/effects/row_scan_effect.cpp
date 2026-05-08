@@ -58,85 +58,43 @@ esp_err_t RowScanEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t RowScanEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
 	if (!opt_json) {
-		// Read failed
 		ESP_LOGW(kTag, "Read failed");
 		return ESP_FAIL;
 	}
-
 	this->path = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer.data(), path_buffer.size(), [this](jparse_ctx_t *jctx) {
-		// version
-		std::array<char, 32> version_buf{};
-		if (json_obj_get_string(jctx, "version", version_buf.data(), version_buf.size()) == 0) {
-			this->version = version_buf.data();
-		}
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		// name
-		std::array<char, 32> name_buf{};
-		if (json_obj_get_string(jctx, "name", name_buf.data(), name_buf.size()) == 0) {
-			this->name = name_buf.data();
-		}
+	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
+		this->name = item->valuestring;
 
-		// type
-		std::array<char, 32> type_buf{};
-		if (json_obj_get_string(jctx, "type", type_buf.data(), type_buf.size()) == 0) {
-			if (type_buf.data() != kType) {
-				ESP_LOGW(Effect::kTag, "Type miss match durring effect parsing! expected: %s received: %s", kType, type_buf);
-				return ESP_FAIL;
-			}
-		}
+	if (auto *item = cJSON_GetObjectItem(root.get(), "version"); cJSON_IsString(item))
+		this->version = item->valuestring;
 
-		// color_on Array
-		int num_on = 0;
-		if (json_obj_get_array(jctx, "parameters.color_on", &num_on) == 0 && num_on >= 3) {
-			// Use temp ints for C-API
-			int temp_r = 0;
-			int temp_g = 0;
-			int temp_b = 0;
-			json_arr_get_int(jctx, 0, &temp_r);
-			json_arr_get_int(jctx, 1, &temp_g);
-			json_arr_get_int(jctx, 2, &temp_b);
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-			// cast from int
-			this->color_on.red = static_cast<uint8_t>(temp_r);
-			this->color_on.green = static_cast<uint8_t>(temp_g);
-			this->color_on.blue = static_cast<uint8_t>(temp_b);
-			json_obj_leave_array(jctx);
-		}
+	if (auto *arr = cJSON_GetObjectItem(params, "color_on"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		this->color_on.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		this->color_on.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		this->color_on.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-		// color_off Array
-		int num_off = 0;
-		if (json_obj_get_array(jctx, "parameters.color_off", &num_off) == 0 && num_off >= 3) {
-			// Use temp ints for C-API
-			int temp_r = 0;
-			int temp_g = 0;
-			int temp_b = 0;
-			json_arr_get_int(jctx, 0, &temp_r);
-			json_arr_get_int(jctx, 1, &temp_g);
-			json_arr_get_int(jctx, 2, &temp_b);
+	if (auto *arr = cJSON_GetObjectItem(params, "color_off"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		this->color_off.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		this->color_off.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		this->color_off.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-			this->color_off.red = static_cast<uint8_t>(temp_r);
-			this->color_off.green = static_cast<uint8_t>(temp_g);
-			this->color_off.blue = static_cast<uint8_t>(temp_b);
-			json_obj_leave_array(jctx);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
+		this->cycle_time = static_cast<uint32_t>(item->valuedouble);
 
-		// standard
-		int temp_cycle = 0;
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &temp_cycle) == 0) {
-			this->cycle_time = static_cast<uint32_t>(temp_cycle);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
+		this->default_brightness = static_cast<uint8_t>(item->valuedouble);
 
-		int temp_brightness = 0;
-		if (json_obj_get_int(jctx, "parameters.default_brightness", &temp_brightness) == 0) {
-			this->default_brightness = static_cast<uint8_t>(temp_brightness);
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t RowScanEffect::serialize() {

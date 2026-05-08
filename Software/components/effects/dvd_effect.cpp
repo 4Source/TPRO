@@ -109,54 +109,37 @@ esp_err_t DVDEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t DVDEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp_val = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp_val) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp_val);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.vel_x", &tmp_val) == 0) {
-			vel_x_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.vel_y", &tmp_val) == 0) {
-			vel_y_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "vel_x"); cJSON_IsNumber(item))
+		vel_x_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.pos_x", &tmp_val) == 0) {
-			pos_x_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "vel_y"); cJSON_IsNumber(item))
+		vel_y_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.pos_y", &tmp_val) == 0) {
-			pos_y_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "pos_x"); cJSON_IsNumber(item))
+		pos_x_.value = static_cast<uint32_t>(item->valuedouble);
 
-		int num_val = 0;
+	if (auto *item = cJSON_GetObjectItem(params, "pos_y"); cJSON_IsNumber(item))
+		pos_y_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.color", &num_val) == 0 && num_val >= 3) {
+	if (auto *arr = cJSON_GetObjectItem(params, "color"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		col_rgb_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_rgb_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		col_rgb_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-			int r_val = 0;
-			int g_val = 0;
-			int b_val = 0;
-
-			json_arr_get_int(jctx, 0, &r_val);
-			json_arr_get_int(jctx, 1, &g_val);
-			json_arr_get_int(jctx, 2, &b_val);
-			json_obj_leave_array(jctx);
-
-			col_rgb_.value = RGB{.red = static_cast<uint8_t>(r_val), .green = static_cast<uint8_t>(g_val), .blue = static_cast<uint8_t>(b_val)};
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t DVDEffect::serialize() {

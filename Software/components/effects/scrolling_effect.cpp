@@ -194,34 +194,24 @@ std::string ScrollingEffect::get_name() { return this->name_; }
 // -----------------
 esp_err_t ScrollingEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		std::array<char, 256> text_buffer{};
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_string(jctx, "parameters.text", text_buffer.data(), text_buffer.size()) == 0) {
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-			text_.value = text_buffer.data();
+	if (auto *item = cJSON_GetObjectItem(params, "text"); cJSON_IsString(item)) {
+		text_.value = item->valuestring;
+		if (label_ != nullptr) { lv_label_set_text(label_, text_.value.c_str()); }
+	}
 
-			if (label_ != nullptr) {
-				lv_label_set_text(label_, text_.value.c_str());
-			}
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "scroll_speed"); cJSON_IsNumber(item))
+		scroll_speed_.value = static_cast<float>(item->valuedouble);
 
-		float temp_speed = 0.0F;
-
-		if (json_obj_get_float(jctx, "parameters.scroll_speed", &temp_speed) == 0) {
-
-			scroll_speed_.value = temp_speed;
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t ScrollingEffect::serialize() {

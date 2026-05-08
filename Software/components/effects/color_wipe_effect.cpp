@@ -123,64 +123,40 @@ esp_err_t ColorWipeEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t ColorWipeEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp_val = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp_val) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp_val);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &tmp_val) == 0) {
-			cyc_time_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.led_range_start", &tmp_val) == 0) {
-			led_start_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
+		cyc_time_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.led_range_end", &tmp_val) == 0) {
-			led_end_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_start"); cJSON_IsNumber(item))
+		led_start_.value = static_cast<uint32_t>(item->valuedouble);
 
-		int num_val = 0;
+	if (auto *item = cJSON_GetObjectItem(params, "led_range_end"); cJSON_IsNumber(item))
+		led_end_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.color_a", &num_val) == 0 && num_val >= 3) {
+	if (auto *arr = cJSON_GetObjectItem(params, "color_a"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		col_a_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_a_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		col_a_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-			int red = 0;
-			int green = 0;
-			int blue = 0;
+	if (auto *arr = cJSON_GetObjectItem(params, "color_b"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		col_b_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_b_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		col_b_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-			json_arr_get_int(jctx, 0, &red);
-			json_arr_get_int(jctx, 1, &green);
-			json_arr_get_int(jctx, 2, &blue);
-			json_obj_leave_array(jctx);
-
-			col_a_.value = RGB{.red = static_cast<uint8_t>(red), .green = static_cast<uint8_t>(green), .blue = static_cast<uint8_t>(blue)};
-		}
-
-		if (json_obj_get_array(jctx, "parameters.color_b", &num_val) == 0 && num_val >= 3) {
-
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			json_arr_get_int(jctx, 0, &red);
-			json_arr_get_int(jctx, 1, &green);
-			json_arr_get_int(jctx, 2, &blue);
-			json_obj_leave_array(jctx);
-
-			col_b_.value = RGB{.red = static_cast<uint8_t>(red), .green = static_cast<uint8_t>(green), .blue = static_cast<uint8_t>(blue)};
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t ColorWipeEffect::serialize() {

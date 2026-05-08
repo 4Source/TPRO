@@ -1,23 +1,52 @@
-.about img {
-	margin-bottom: 1.5rem;
-	display: inline;
+.about {
+	padding: 3rem 1.5rem;
+	max-width: 480px;
+	margin: 0 auto;
 }
 
-.about img:hover {
-	filter: drop-shadow(0 0 2em #673ab8aa);
+.about h1 {
+	font-size: 1.75rem;
+	font-weight: 700;
+	margin: 0 0 0.25rem;
+	color: #009FE3;
 }
 
-.about section {
-	margin-top: 5rem;
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	column-gap: 1.5rem;
+.about-subtitle {
+	font-size: 0.95rem;
+	color: #9ca3af;
+	margin: 0 0 2rem;
 }
 
-@media (max-width: 639px) {
-	.about section {
-		margin-top: 5rem;
-		grid-template-columns: 1fr;
-		row-gap: 1rem;
-	}
+.about-card {
+	background: #1f2937;
+	border: 1px solid #374151;
+	border-radius: 0.75rem;
+	overflow: hidden;
+}
+
+.about-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1.5rem;
+	padding: 0.75rem 1.25rem;
+	border-bottom: 1px solid #374151;
+}
+
+.about-row:last-child {
+	border-bottom: none;
+}
+
+.about-label {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #6b7280;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.about-value {
+	font-size: 0.875rem;
+	color: #f3f4f6;
+	font-family: monospace;
 }

@@ -53,10 +53,6 @@ struct __attribute__((packed)) RGB {
 constexpr RGB operator*(RGB lhs, float rhs) { return lhs *= rhs; };
 constexpr RGB operator+(RGB lhs, RGB rhs) { return lhs += rhs; };
 
-inline RGB hex_to_rgb(const std::string &hex) {
-	return {static_cast<uint8_t>(std::stoi(hex.substr(1, 2), nullptr, 16)), static_cast<uint8_t>(std::stoi(hex.substr(3, 2), nullptr, 16)),
-			static_cast<uint8_t>(std::stoi(hex.substr(5, 2), nullptr, 16))};
-}
 /// @brief Ein Frame, der die LED-Daten für alle LEDs enthält
 // Jeder Effect hat einen LED Frame
 // Ein LED Frame wird später statisch sein, er wird vom Licht-Effekt Manager

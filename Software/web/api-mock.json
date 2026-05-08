@@ -1,10 +1,40 @@
 {
+    "/config": {
+        "get": "/effects",
+        "put": "OK",
+        "delete": "OK"
+    },
     "/directory": {
         "get": [
             "test.txt",
             "effect/",
             "deep/",
-            "long/"
+            "long/",
+            "effects/"
+        ]
+    },
+    "/directory/effects": {
+        "get": []
+    },
+    "/directory/effects/defaults": {
+        "get": [
+            "blink.json",
+            "breathing.json",
+            "column_scan.json",
+            "continent.json",
+            "day_night.json",
+            "debug.json",
+            "dvd.json",
+            "equalizer.json",
+            "fire.json",
+            "matrix.json",
+            "plasma.json",
+            "rainbow.json",
+            "row_scan.json",
+            "scrolling.json",
+            "static_color.json",
+            "timeline.json",
+            "wipe.json"
         ]
     },
     "/directory/deep": {
@@ -97,5 +127,667 @@
         "get": "Hello example effect content",
         "put": "Uploaded",
         "delete": "Deleted"
+    },
+    "/file/effects/defaults/blink.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Blinking Effect",
+            "type": "blink",
+            "parameters": {
+                "cycle_time": 1000,
+                "default_brightness": 100,
+                "color_on": [
+                    255,
+                    255,
+                    255
+                ],
+                "color_off": [
+                    0,
+                    0,
+                    0
+                ],
+                "led_range": [
+                    0,
+                    1000
+                ]
+            },
+            "schema": {
+                "cycle_time": {
+                    "type": "number",
+                    "min": 100,
+                    "max": 10000,
+                    "step": 100
+                },
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "color_on": {
+                    "type": "color"
+                },
+                "color_off": {
+                    "type": "color"
+                },
+                "led_range": {
+                    "type": "range",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK",
+        "delete": "Deleted"
+    },
+    "/file/effects/defaults/breathing.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Breathing Effect",
+            "type": "breathing",
+            "parameters": {
+                "cycle_time": 2000,
+                "default_brightness": 200,
+                "speed": 3,
+                "scale": 2,
+                "color": [
+                    100,
+                    200,
+                    255
+                ]
+            },
+            "schema": {
+                "cycle_time": {
+                    "type": "number",
+                    "min": 100,
+                    "max": 10000,
+                    "step": 100
+                },
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "color": {
+                    "type": "color"
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/fire.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Fire Effect",
+            "type": "fire",
+            "parameters": {
+                "default_brightness": 180,
+                "cycle_time": 1000,
+                "speed": 2,
+                "scale": 1,
+                "cooling": 55,
+                "sparking": 120,
+                "led_range": [
+                    0,
+                    1000
+                ]
+            },
+            "schema": {
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "cycle_time": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 60000,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "cooling": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "sparking": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "led_range": {
+                    "type": "range",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/rainbow.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Rainbow Wave Effect",
+            "type": "rainbow",
+            "parameters": {
+                "default_brightness": 150,
+                "cycle_time": 1000,
+                "speed": 2,
+                "scale": 1,
+                "led_range": [
+                    0,
+                    3024
+                ]
+            },
+            "schema": {
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "cycle_time": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 600000,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "led_range": {
+                    "type": "range",
+                    "min": 0,
+                    "max": 100000,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/plasma.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Plasma Effect",
+            "type": "plasma",
+            "parameters": {
+                "default_brightness": 150,
+                "cycle_time": 1000,
+                "speed": 1,
+                "scale": 1,
+                "led_range": [
+                    0,
+                    1000
+                ],
+                "color_on": [
+                    255,
+                    255,
+                    255
+                ],
+                "color_off": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "schema": {
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "cycle_time": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 600000,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "led_range": {
+                    "type": "range",
+                    "min": 0,
+                    "max": 100000,
+                    "step": 1
+                },
+                "color_on": {
+                    "type": "color"
+                },
+                "color_off": {
+                    "type": "color"
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/matrix.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Matrix Effect",
+            "type": "matrix",
+            "parameters": {
+                "default_brightness": 180,
+                "cycle_time": 1000,
+                "speed": 3,
+                "scale": 1,
+                "spawn_rate": 20,
+                "led_range": [
+                    0,
+                    1000
+                ]
+            },
+            "schema": {
+                "default_brightness": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "cycle_time": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 60000,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 20,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "spawn_rate": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 255,
+                    "step": 1
+                },
+                "led_range": {
+                    "type": "range",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/dvd.json": {
+        "get": {
+            "version": "1.0",
+            "name": "DVD Effect",
+            "type": "dvd",
+            "parameters": {
+                "speed": 1,
+                "vel_x": 1,
+                "vel_y": 1,
+                "pos_x": 0,
+                "pos_y": 0,
+                "color": [
+                    255,
+                    0,
+                    0
+                ]
+            },
+            "schema": {
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "vel_x": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 20,
+                    "step": 1
+                },
+                "vel_y": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 20,
+                    "step": 1
+                },
+                "pos_x": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                },
+                "pos_y": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                },
+                "color": {
+                    "type": "color"
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/wipe.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Color Wipe Effect",
+            "type": "wipe",
+            "parameters": {
+                "speed": 1,
+                "cycle_time": 1000,
+                "led_range_start": 0,
+                "led_range_end": 1000,
+                "color_a": [
+                    255,
+                    255,
+                    255
+                ],
+                "color_b": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "schema": {
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "cycle_time": {
+                    "type": "number",
+                    "min": 100,
+                    "max": 10000,
+                    "step": 100
+                },
+                "led_range_start": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                },
+                "led_range_end": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                },
+                "color_a": {
+                    "type": "color"
+                },
+                "color_b": {
+                    "type": "color"
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/equalizer.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Equalizer Effect",
+            "type": "equalizer",
+            "parameters": {
+                "decay": 1,
+                "speed": 1,
+                "scale": 1,
+                "led_range_start": 0,
+                "led_range_end": 1000
+            },
+            "schema": {
+                "decay": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 10,
+                    "step": 1
+                },
+                "speed": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "scale": {
+                    "type": "number",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                },
+                "led_range_start": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                },
+                "led_range_end": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 3024,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/scrolling.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Scrolling Effect",
+            "type": "scrolling",
+            "parameters": {
+                "text": "WILLKOMMEN AUF DER NEUEN MATRIX!",
+                "scroll_speed": 1
+            },
+            "schema": {
+                "text": {
+                    "type": "string"
+                },
+                "scroll_speed": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 10,
+                    "step": 1
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/timeline.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Timeline Effect",
+            "subeffects": [
+                {
+                    "type": "blink",
+                    "path": "/effects/blink.json"
+                },
+                {
+                    "type": "fire",
+                    "path": "/effects/fire.json"
+                }
+            ],
+            "type": "timeline",
+            "parameters": {
+                "primary": {
+                    "id": 0,
+                    "cycle_time": 5000,
+                    "overwrite": {}
+                },
+                "secondary": [
+                    {
+                        "id": 1,
+                        "cycle_time": 3000,
+                        "overwrite": {}
+                    }
+                ],
+                "_type": "timeline"
+            },
+            "schema": {
+                "_type": {
+                    "type": "timeline"
+                }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/column_scan.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Column Scan Effect",
+            "type": "column_scan",
+            "parameters": {
+                "color_on": [255, 255, 255],
+                "color_off": [0, 0, 0],
+                "cycle_time": 1000,
+                "default_brightness": 100
+            },
+            "schema": {
+                "color_on": { "type": "color" },
+                "color_off": { "type": "color" },
+                "cycle_time": { "type": "number", "min": 100, "max": 10000, "step": 100 },
+                "default_brightness": { "type": "number", "min": 0, "max": 255, "step": 1 }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/row_scan.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Row Scan Effect",
+            "type": "row_scan",
+            "parameters": {
+                "color_on": [255, 255, 255],
+                "color_off": [0, 0, 0],
+                "cycle_time": 1000,
+                "default_brightness": 100
+            },
+            "schema": {
+                "color_on": { "type": "color" },
+                "color_off": { "type": "color" },
+                "cycle_time": { "type": "number", "min": 100, "max": 10000, "step": 100 },
+                "default_brightness": { "type": "number", "min": 0, "max": 255, "step": 1 }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/static_color.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Static Color Effect",
+            "type": "static_color",
+            "parameters": {
+                "color": [255, 255, 255],
+                "default_brightness": 100
+            },
+            "schema": {
+                "color": { "type": "color" },
+                "default_brightness": { "type": "number", "min": 0, "max": 255, "step": 1 }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/debug.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Debug Effect",
+            "type": "debug",
+            "parameters": {},
+            "schema": {}
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/day_night.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Day Night Effect",
+            "type": "day_night",
+            "parameters": {
+                "default_speed": 1,
+                "default_brightness": 100
+            },
+            "schema": {
+                "default_speed": { "type": "number", "min": 1, "max": 10, "step": 1 },
+                "default_brightness": { "type": "number", "min": 0, "max": 255, "step": 1 }
+            }
+        },
+        "put": "OK"
+    },
+    "/file/effects/defaults/continent.json": {
+        "get": {
+            "version": "1.0",
+            "name": "Continent Effect",
+            "type": "continent",
+            "parameters": {
+                "color": {
+                    "north": [200, 230, 255],
+                    "south": [180, 220, 100],
+                    "europe": [100, 180, 255],
+                    "africa": [255, 200, 50],
+                    "asia": [255, 150, 80],
+                    "australia": [255, 120, 60],
+                    "ocean": [0, 80, 180]
+                }
+            },
+            "schema": {}
+        },
+        "put": "OK"
+    },
+    "/effect/effects/blink.json": {
+        "put": "OK"
     }
 }

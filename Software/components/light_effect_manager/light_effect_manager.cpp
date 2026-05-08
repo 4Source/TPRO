@@ -90,6 +90,29 @@ esp_err_t LightEffectManager::unregister_effect(const std::shared_ptr<Effect> &e
 	return ESP_OK;
 }
 
+esp_err_t LightEffectManager::reload_effect(const std::string &path) {
+	auto it = std::ranges::find_if(available_effects_, [&path](const auto &e) { return e && e->get_filepath() == path; });
+
+	const bool was_current = (it != available_effects_.end() && *it == current_effect_);
+
+	if (it != available_effects_.end()) {
+		available_effects_.erase(it);
+	}
+
+	auto new_effect = EffectFactory::generate_from_json(path);
+	if (!new_effect) {
+		return ESP_FAIL;
+	}
+
+	available_effects_.push_back(new_effect);
+
+	if (was_current) {
+		current_effect_ = new_effect;
+	}
+
+	return ESP_OK;
+}
+
 std::shared_ptr<Effect> LightEffectManager::get_effect(const std::string &path) {
 	auto iterator = std::ranges::find_if(available_effects_, [&path](const auto &effect) { return effect && effect->get_filepath() == path; });
 
@@ -180,12 +203,20 @@ void LightEffectManager::set_config_manager(ConfigManager *manager) {
 
 void LightEffectManager::update(const std::string &key) {
 	if (config_manager_ == nullptr) {
+		ESP_LOGW(kTag, "update() called but config_manager_ is null");
 		return;
 	}
 
 	if (key == "current_effect") {
 		auto path = config_manager_->get_config("current_effect");
-		set_effect(path);
+		ESP_LOGI(kTag, "Switching effect to: %s", path.c_str());
+		auto effect = get_effect(path);
+		if (effect) {
+			current_effect_ = effect;
+			ESP_LOGI(kTag, "Effect switched to: %s", effect->get_name().c_str());
+		} else {
+			ESP_LOGE(kTag, "get_effect returned nullptr for path: %s", path.c_str());
+		}
 	}
 }
 

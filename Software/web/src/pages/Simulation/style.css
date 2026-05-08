@@ -55,8 +55,9 @@
 	display: grid;
 	grid-template-columns: repeat(var(--cols), 1fr);
 	grid-template-rows: repeat(var(--rows), 1fr);
-	column-gap: calc((100% - var(--cols) * 1px) / (var(--cols) - 1));
-	row-gap: calc((100% - var(--rows) * 1px) / (var(--rows) - 1));
+	/* --dot-fill: 0→1 shrinks the gap so dots grow from 1px to cell width */
+	column-gap: max(0px, calc((1 - var(--dot-fill, 0)) * (100% - var(--cols) * 1px) / (var(--cols) - 1)));
+	row-gap:    max(0px, calc((1 - var(--dot-fill, 0)) * (100% - var(--rows) * 1px) / (var(--rows) - 1)));
 	z-index: 2;
 }
 
@@ -84,9 +85,10 @@
 }
 
 .dot {
-	aspect-ratio: 1 / 1;
-	width: 1px;
-	height: 1px;
+	width: max(1px, 100%);
+	aspect-ratio: 1;
+	align-self: center;
+	justify-self: center;
 	border-radius: 50%;
 	border: none;
 	transition: background-color 0.1s ease;
@@ -178,6 +180,169 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	border-color: #6b7280;
 }
 
+.sim-toolbar-left {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.sim-active-effect {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: #6b7280;
+}
+
+/* ── Quick effect popover ────────────────────────────────── */
+
+.quick-effect-wrap {
+	position: relative;
+}
+
+.quick-effect-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 30;
+}
+
+.quick-effect-popover {
+	position: absolute;
+	top: calc(100% + 0.5rem);
+	left: 0;
+	z-index: 31;
+	background: #1f2937;
+	border: 1px solid #374151;
+	border-radius: 0.75rem;
+	padding: 1rem;
+	width: 210px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.quick-effect-label {
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: #6b7280;
+	margin: 0;
+}
+
+.quick-effect-select {
+	width: 100%;
+	background: #374151;
+	color: #e5e7eb;
+	border: 1px solid #4b5563;
+	border-radius: 0.4rem;
+	font-size: 0.8rem;
+	padding: 0.35rem 0.5rem;
+	outline: none;
+}
+
+.quick-effect-duration-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.quick-effect-duration-input {
+	width: 4rem;
+	background: #374151;
+	color: #e5e7eb;
+	border: 1px solid #4b5563;
+	border-radius: 0.4rem;
+	font-size: 0.8rem;
+	padding: 0.35rem 0.5rem;
+	text-align: right;
+	outline: none;
+}
+
+.quick-effect-unit {
+	font-size: 0.75rem;
+	color: #9ca3af;
+}
+
+.quick-effect-start {
+	margin-top: 0.25rem;
+	padding: 0.5rem;
+	background: #009FE3;
+	color: white;
+	border: none;
+	border-radius: 0.5rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.quick-effect-start:hover {
+	background: #0086c0;
+}
+
+/* Running / countdown state */
+
+.quick-effect-running {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.quick-effect-countdown {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #009FE3;
+	min-width: 2.5rem;
+	text-align: right;
+	font-family: monospace;
+}
+
+.quick-effect-cancel {
+	padding: 0.3rem 0.65rem;
+	background: none;
+	border: 1px solid #4b5563;
+	border-radius: 0.4rem;
+	color: #9ca3af;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: color 0.1s, border-color 0.1s;
+}
+
+.quick-effect-cancel:hover {
+	color: #f87171;
+	border-color: #f87171;
+}
+
+/* Light-mode overrides */
+
+.sim-light .sim-active-effect {
+	color: #94a3b8;
+}
+
+.sim-light .quick-effect-popover {
+	background: #f8fafc;
+	border-color: #e2e8f0;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.sim-light .quick-effect-select,
+.sim-light .quick-effect-duration-input {
+	background: #e2e8f0;
+	color: #1e293b;
+	border-color: #cbd5e1;
+}
+
+.sim-light .quick-effect-unit,
+.sim-light .quick-effect-label {
+	color: #94a3b8;
+}
+
+.sim-light .quick-effect-cancel {
+	border-color: #cbd5e1;
+	color: #64748b;
+}
+
 /* ── Settings sidebar ────────────────────────────────────── */
 
 .settings-backdrop {
@@ -197,13 +362,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .settings-panel {
 	position: fixed;
 	top: 0;
-	right: 0;
+	left: 0;
 	bottom: 0;
 	width: 360px;
 	background: #1f2937;
-	border-left: 1px solid #374151;
+	border-right: 1px solid #374151;
 	z-index: 50;
-	transform: translateX(100%);
+	transform: translateX(-100%);
 	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	display: flex;
 	flex-direction: column;
@@ -378,6 +543,66 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	font-size: 1rem;
 }
 
+.settings-time-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.settings-time-label {
+	font-size: 0.75rem;
+	color: #9ca3af;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
+}
+
+.settings-time-input {
+	flex: 1;
+	background: #374151;
+	color: #fff;
+	border: 1px solid #4b5563;
+	border-radius: 0.5rem;
+	padding: 0.375rem 0.5rem;
+	font-size: 0.875rem;
+	outline: none;
+	color-scheme: dark;
+}
+
+.settings-time-input:focus {
+	border-color: #009FE3;
+}
+
+.settings-brightness-value {
+	color: #9ca3af;
+	font-weight: 400;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.settings-brightness-slider {
+	width: 100%;
+	accent-color: #009FE3;
+	margin-top: 0.25rem;
+}
+
+.settings-brightness-slider::-webkit-slider-runnable-track {
+	background: #4b5563;
+	border-radius: 3px;
+}
+
+.settings-brightness-slider::-moz-range-track {
+	background: #4b5563;
+	border-radius: 3px;
+	height: 6px;
+}
+
+.sim-light .settings-brightness-slider::-webkit-slider-runnable-track,
+.sim-light .settings-brightness-slider::-moz-range-track {
+	background: #cbd5e1;
+}
+
 /* ── Effect panel ────────────────────────────────────────── */
 
 .effect-cards {
@@ -417,6 +642,74 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .effect-card.selected.active {
 	border-color: #22c55e;
 	background: #14532d;
+}
+
+.effect-card-row {
+	display: flex;
+	gap: 0.4rem;
+	align-items: stretch;
+}
+
+.effect-card-row .effect-card {
+	flex: 1;
+}
+
+.effect-delete-btn {
+	flex-shrink: 0;
+	width: 2rem;
+	background: none;
+	border: 1px solid #4b5563;
+	border-radius: 0.5rem;
+	color: #6b7280;
+	font-size: 0.75rem;
+	cursor: pointer;
+	transition: color 0.1s, border-color 0.1s, background 0.1s;
+}
+
+.effect-delete-btn:hover {
+	color: #f87171;
+	border-color: #f87171;
+	background: rgba(248, 113, 113, 0.08);
+}
+
+.delete-confirm-text {
+	font-size: 0.875rem;
+	color: #e5e7eb;
+	margin: 0;
+	line-height: 1.5;
+}
+
+.delete-confirm-text strong {
+	color: #f3f4f6;
+	font-weight: 700;
+}
+
+.effect-delete-confirm-btn {
+	flex: 1;
+	padding: 0.55rem;
+	background: #dc2626;
+	color: white;
+	border: none;
+	border-radius: 0.5rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.effect-delete-confirm-btn:hover {
+	background: #b91c1c;
+}
+
+.sim-light .effect-delete-btn {
+	border-color: #cbd5e1;
+	color: #94a3b8;
+}
+
+.sim-light .effect-delete-btn:hover {
+	color: #dc2626;
+	border-color: #dc2626;
+	background: rgba(220, 38, 38, 0.06);
 }
 
 .effect-card-icon {
@@ -605,25 +898,192 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	color: #93c5fd;
 }
 
+/* ── Parameter editor ────────────────────────────────────── */
+
+.effect-params {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.param-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.param-label {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.param-slider-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.param-slider {
+	flex: 1;
+	accent-color: #3b82f6;
+}
+
+.param-slider::-webkit-slider-runnable-track {
+	background: #4b5563;
+	border-radius: 3px;
+}
+
+.param-slider::-moz-range-track {
+	background: #4b5563;
+	border-radius: 3px;
+	height: 6px;
+}
+
+.sim-light .param-slider::-webkit-slider-runnable-track,
+.sim-light .param-slider::-moz-range-track {
+	background: #cbd5e1;
+}
+
+.param-value-input {
+	width: 4.5rem;
+	background: #374151;
+	color: #f3f4f6;
+	border: 1px solid #4b5563;
+	border-radius: 0.35rem;
+	font-size: 0.75rem;
+	padding: 0.25rem 0.4rem;
+	text-align: right;
+	outline: none;
+	flex-shrink: 0;
+}
+
+.param-color-row {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.param-color-input {
+	width: 2.5rem;
+	height: 2rem;
+	border: 1px solid #4b5563;
+	border-radius: 0.35rem;
+	background: none;
+	cursor: pointer;
+	padding: 0.1rem;
+	flex-shrink: 0;
+}
+
+.param-value-text {
+	font-size: 0.7rem;
+	color: #9ca3af;
+	font-family: monospace;
+}
+
+.param-range-row {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+}
+
+.param-range-label {
+	font-size: 0.7rem;
+	color: #6b7280;
+	flex-shrink: 0;
+}
+
+.param-range-input {
+	width: 5rem;
+	background: #374151;
+	color: #f3f4f6;
+	border: 1px solid #4b5563;
+	border-radius: 0.35rem;
+	font-size: 0.75rem;
+	padding: 0.25rem 0.4rem;
+	outline: none;
+}
+
+.param-text-input {
+	width: 100%;
+	background: #374151;
+	color: #f3f4f6;
+	border: 1px solid #4b5563;
+	border-radius: 0.35rem;
+	font-size: 0.8rem;
+	padding: 0.4rem 0.6rem;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.sim-light .param-label {
+	color: #64748b;
+}
+
+.sim-light .param-value-input,
+.sim-light .param-range-input,
+.sim-light .param-text-input {
+	background: #e2e8f0;
+	color: #1e293b;
+	border-color: #cbd5e1;
+}
+
+.sim-light .param-color-input {
+	border-color: #cbd5e1;
+}
+
+.sim-light .param-value-text,
+.sim-light .param-range-label {
+	color: #94a3b8;
+}
+
 /* ── Effect apply button ─────────────────────────────────── */
 
 .effect-apply-row {
+	display: flex;
+	gap: 0.5rem;
 	padding: 1rem 0 0.5rem;
 	border-top: 1px solid #374151;
 	margin-top: 0.5rem;
 }
 
 .effect-apply-btn {
-	width: 100%;
-	padding: 0.65rem;
+	flex: 1;
+	padding: 0.65rem 0.5rem;
 	background: #2563eb;
 	color: white;
 	border: none;
 	border-radius: 0.6rem;
-	font-size: 0.875rem;
+	font-size: 0.8rem;
 	font-weight: 700;
 	cursor: pointer;
 	transition: background 0.15s;
+}
+
+.effect-save-new-btn {
+	flex: 1;
+	padding: 0.65rem 0.5rem;
+	background: transparent;
+	color: #e5e7eb;
+	border: 1px solid #4b5563;
+	border-radius: 0.6rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.effect-save-new-btn:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: #6b7280;
+}
+
+.effect-save-new-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
 .effect-apply-btn:hover:not(:disabled) {
@@ -636,7 +1096,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	cursor: not-allowed;
 }
 
-.effect-apply-btn.applying {
+.effect-apply-btn.applying,
+.effect-apply-btn.saving {
 	background: #1e40af;
 }
 
@@ -646,6 +1107,129 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .effect-apply-btn.error {
 	background: #b91c1c;
+}
+
+/* ── Save-as-new dialog ──────────────────────────────────── */
+
+.save-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	z-index: 200;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.save-dialog {
+	background: #1f2937;
+	border: 1px solid #374151;
+	border-radius: 0.875rem;
+	padding: 1.5rem;
+	width: 320px;
+	max-width: 90vw;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.save-dialog-title {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: #f3f4f6;
+	margin: 0;
+}
+
+.save-dialog-field {
+	display: flex;
+	align-items: center;
+	background: #374151;
+	border: 1px solid #4b5563;
+	border-radius: 0.45rem;
+	overflow: hidden;
+}
+
+.save-dialog-prefix {
+	padding: 0 0.5rem;
+	font-size: 0.8rem;
+	color: #6b7280;
+	white-space: nowrap;
+	font-family: monospace;
+	border-right: 1px solid #4b5563;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+}
+
+.save-dialog-input {
+	flex: 1;
+	background: transparent;
+	color: #f3f4f6;
+	border: none;
+	font-size: 0.875rem;
+	padding: 0.55rem 0.75rem;
+	outline: none;
+}
+
+.save-dialog-hint {
+	font-size: 0.7rem;
+	color: #6b7280;
+	font-family: monospace;
+	margin: 0;
+}
+
+.save-dialog-error {
+	font-size: 0.75rem;
+	color: #f87171;
+	margin: 0;
+}
+
+.save-dialog-actions {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.25rem;
+}
+
+.save-dialog-cancel {
+	flex: 1;
+	padding: 0.55rem;
+	background: transparent;
+	color: #9ca3af;
+	border: 1px solid #4b5563;
+	border-radius: 0.5rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: color 0.1s, border-color 0.1s;
+}
+
+.save-dialog-cancel:hover:not(:disabled) {
+	color: #e5e7eb;
+	border-color: #6b7280;
+}
+
+.save-dialog-save {
+	flex: 1;
+	padding: 0.55rem;
+	background: #009FE3;
+	color: white;
+	border: none;
+	border-radius: 0.5rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.save-dialog-save:hover:not(:disabled) {
+	background: #0086c0;
+}
+
+.save-dialog-save:disabled,
+.save-dialog-cancel:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
 /* ── Light mode ──────────────────────────────────────────── */

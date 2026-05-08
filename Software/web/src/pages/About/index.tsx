@@ -1,17 +1,31 @@
-import preactLogo from '../../assets/preact.svg';
-import worldmapImage from '../../assets/worldmap.svg';
-import { Clock } from '../../components/Clock/Clock';
 import './style.css';
+
+declare const __APP_VERSION__: string;
 
 export function About() {
 	return (
 		<div class="about">
-			<a href="https://preactjs.com" target="_blank" rel="noreferrer">
-				<img src={preactLogo} alt="Preact logo" height="160" width="160" />
-			</a>
-			<h1>This is the about page</h1>
-			<img src={worldmapImage} height="180" width="300" />
-			<Clock />
+			<h1>Light Wall</h1>
+			<p class="about-subtitle">LED-Matrix Controller</p>
+
+			<div class="about-card">
+				<div class="about-row">
+					<span class="about-label">Version</span>
+					<span class="about-value">{__APP_VERSION__}</span>
+				</div>
+				<div class="about-row">
+					<span class="about-label">Platform</span>
+					<span class="about-value">ESP32-S3</span>
+				</div>
+				<div class="about-row">
+					<span class="about-label">Matrix</span>
+					<span class="about-value">87 × 35 LEDs (3 045 gesamt)</span>
+				</div>
+				<div class="about-row">
+					<span class="about-label">Framework</span>
+					<span class="about-value">ESP-IDF · Preact</span>
+				</div>
+			</div>
 		</div>
 	);
 }
