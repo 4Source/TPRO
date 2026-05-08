@@ -22,15 +22,16 @@ if(CONFIG_ENABLE_EFFECTS)
         "color_wipe_effect.cpp"
         "color_hsv.cpp"
         "continent_effect.cpp"
-        "day_night_effect.cpp"
         "dvd_effect.cpp"
+        "day_night_types.cpp"
         "equalizer_effect.cpp"
         "fire_effect.cpp"
         "matrix_effect.cpp"
         "plasma_effect.cpp"
         "rainbow_wave_effect.cpp"
         "timeline_effect.cpp"
-        "scrolling_effect.cpp")
+        "scrolling_effect.cpp"
+        fast_day_night_effect.cpp)
     list(APPEND requires 
 )
 endif()

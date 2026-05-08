@@ -5,7 +5,7 @@ static constexpr const char *kTag = "main";
 
 extern "C" void app_main(void) {
 	// Only used for pytest_boot
-	ESP_LOGI(kTag, "Clock Slave startup");
+	ESP_LOGD(kTag, "Clock Slave startup");
 
 	while (true) {
 		// Delay to simulate load

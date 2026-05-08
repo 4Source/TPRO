@@ -27,6 +27,7 @@
 #include "effect/debug_effect.hpp"
 #include "effect/dvd_effect.hpp"
 #include "effect/equalizer_effect.hpp"
+#include "effect/fast_day_night_effect.hpp"
 #include "effect/fire_effect.hpp"
 #include "effect/matrix_effect.hpp"
 #include "effect/plasma_effect.hpp"
@@ -52,20 +53,20 @@ static constexpr const char *kMonitorTag = "MONITOR";
 void system_monitor_task(void *pv_parameter) {
 
 	while (true) {
-		ESP_LOGI(kMonitorTag, "================ SYSTEM MONITOR ================");
+		ESP_LOGD(kMonitorTag, "================ SYSTEM MONITOR ================");
 
-		// 1. Allgemeiner RAM (Dein Snippet)
-		ESP_LOGI(kMonitorTag, "Free Heap:       %.1f KB", static_cast<float>(esp_get_free_heap_size()) / 1024.0F);
-		ESP_LOGI(kMonitorTag, "Largest Block:   %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)) / 1024.0F);
+		// Allgemeiner RAM
+		ESP_LOGD(kMonitorTag, "Free Heap:       %.1f KB", static_cast<float>(esp_get_free_heap_size()) / 1024.0F);
+		ESP_LOGD(kMonitorTag, "Largest Block:   %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)) / 1024.0F);
 
-		// 2. DMA-fähiger RAM (Wichtig für dein SPI/Display)
-		ESP_LOGI(kMonitorTag, "Free DMA RAM:    %.1f KB", static_cast<float>(heap_caps_get_free_size(MALLOC_CAP_DMA)) / 1024.0F);
-		ESP_LOGI(kMonitorTag, "Largest DMA:     %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_DMA)) / 1024.0F);
+		// DMA-fähiger RAM
+		ESP_LOGD(kMonitorTag, "Free DMA RAM:    %.1f KB", static_cast<float>(heap_caps_get_free_size(MALLOC_CAP_DMA)) / 1024.0F);
+		ESP_LOGD(kMonitorTag, "Largest DMA:     %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_DMA)) / 1024.0F);
 
 		UBaseType_t stack_watermark = uxTaskGetStackHighWaterMark(nullptr);
-		ESP_LOGI(kMonitorTag, "Monitor Stack:   %lu Bytes free", static_cast<uint32_t>(stack_watermark * 4));
+		ESP_LOGD(kMonitorTag, "Monitor Stack:   %lu Bytes free", static_cast<uint32_t>(stack_watermark * 4));
 
-		ESP_LOGI(kMonitorTag, "================================================");
+		ESP_LOGD(kMonitorTag, "================================================");
 
 		vTaskDelay(pdMS_TO_TICKS(60000));
 	}
@@ -91,7 +92,7 @@ static void init_nvs_storage() {
  */
 static void handle_websocket_state(httpd_handle_t handle) {
 	if (handle != nullptr) {
-		ESP_LOGI(kTag, "HTTPs server handle received, starting WebSocket...");
+		ESP_LOGD(kTag, "HTTPs server handle received, starting WebSocket...");
 		g_ws_server.emplace(handle, main_frame);
 		g_ws_server->run();
 	} else {
@@ -105,7 +106,7 @@ static void handle_websocket_state(httpd_handle_t handle) {
 
 extern "C" void app_main(void) {
 	// Only used for pytest_boot
-	ESP_LOGI(kTag, "LED Wall startup");
+	ESP_LOGD(kTag, "LED Wall startup");
 
 	init_nvs_storage();
 
@@ -185,10 +186,12 @@ extern "C" void app_main(void) {
 
 	// auto main_timeline = EffectFactory::generate_from_json(ContinentEffect::kDefaultConfigPath);
 	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_continent.json");
+	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
 	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_full.json");
-	effect_manager.set_config_manager(&main_config);
+	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
+	// auto main_timeline = EffectFactory::generate_from_json(FastDayNightEffect::kDefaultConfigPath);
+	auto main_timeline = EffectFactory::generate_from_json("/effects/faster_day_night.json");
 
-	auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
 	effect_manager.register_effect(main_timeline);
 	effect_manager.set_effect(main_timeline);
 	effect_manager.start();

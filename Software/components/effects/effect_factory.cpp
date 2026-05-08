@@ -20,6 +20,7 @@
 #include "effect/debug_effect.hpp"
 #include "effect/dvd_effect.hpp"
 #include "effect/equalizer_effect.hpp"
+#include "effect/fast_day_night_effect.hpp"
 #include "effect/fire_effect.hpp"
 #include "effect/matrix_effect.hpp"
 #include "effect/plasma_effect.hpp"
@@ -40,6 +41,7 @@ const std::unordered_map<std::string, EffectCreator> EffectFactory::registry = {
 	{DebugEffect::kType, []() { return std::make_shared<DebugEffect>(); }},
 	{DVDEffect::kType, []() { return std::make_shared<DVDEffect>(); }},
 	{EqualizerEffect::kType, []() { return std::make_shared<EqualizerEffect>(); }},
+	{FastDayNightEffect::kType, []() { return std::make_shared<FastDayNightEffect>(); }},
 	{FireEffect::kType, []() { return std::make_shared<FireEffect>(); }},
 	{MatrixEffect::kType, []() { return std::make_shared<MatrixEffect>(); }},
 	{PlasmaEffect::kType, []() { return std::make_shared<PlasmaEffect>(); }},
@@ -102,14 +104,14 @@ esp_err_t EffectFactory::writeDefaults(const std::string &directory) {
 
 	for (const auto &[name, creator] : registry) {
 		std::string path = std::format("{}/{}.json", directory, name);
-		ESP_LOGI(kTag, "Check if effect config is available: %s", path.c_str());
+		ESP_LOGD(kTag, "Check if effect config is available: %s", path.c_str());
 
 		if (FileManager::is_file(path) == ESP_OK) {
 			continue;
 		}
 
 		auto effect = creator();
-		ESP_LOGI(kTag, "Created effect: %s", name.c_str());
+		ESP_LOGD(kTag, "Created effect: %s", name.c_str());
 
 		if (!effect) {
 			result = ESP_FAIL;

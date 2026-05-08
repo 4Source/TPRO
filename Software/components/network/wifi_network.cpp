@@ -26,7 +26,7 @@ uint8_t WifiNetwork::s_retry_num = 0;
 EventGroupHandle_t WifiNetwork::s_wifi_event_group = xEventGroupCreate();
 
 esp_err_t WifiNetwork::init() {
-	ESP_LOGI(kTag, "Setup wifi connection...");
+	ESP_LOGD(kTag, "Setup wifi connection...");
 	// Initialize wifi and start the task
 	wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
 	ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_init_config), kTag, "Failed to initialize wifi");
@@ -50,7 +50,7 @@ esp_err_t WifiNetwork::init() {
 
 	ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), kTag, "Failed to set wifi configuration");
 
-	ESP_LOGI(kTag, "Setup wifi connection finished");
+	ESP_LOGD(kTag, "Setup wifi connection finished");
 
 	return ESP_OK;
 }
@@ -58,12 +58,12 @@ esp_err_t WifiNetwork::init() {
 esp_err_t WifiNetwork::connect() {
 	// TODO: Write testcases for wifi/ethernet connection
 
-	ESP_LOGI(kTag, "Start wifi connection...");
+	ESP_LOGD(kTag, "Start wifi connection...");
 	// Start wifi
 	ESP_RETURN_ON_ERROR(esp_wifi_start(), kTag, "Failed to start WiFi");
 
 	esp_wifi_set_ps(WIFI_PS_NONE);
-	ESP_LOGI("NETWORK", "WiFi Power Save deaktiviert");
+	ESP_LOGD("NETWORK", "WiFi Power Save deaktiviert");
 
 	return wait_for_connection();
 }
@@ -74,7 +74,7 @@ esp_err_t WifiNetwork::wait_for_connection() {
 
 	// xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually happened.
 	if ((bits & WIFI_CONNECTED_BIT) != 0) {
-		ESP_LOGI(kTag, "Connected to AP SSID: %s", CONFIG_WIFI_SSID);
+		ESP_LOGD(kTag, "Connected to AP SSID: %s", CONFIG_WIFI_SSID);
 	} else if ((bits & WIFI_CONNECTION_FAILED_BIT) != 0) {
 		ESP_LOGE(kTag, "Failed to connect to SSID: %s", CONFIG_WIFI_SSID);
 		return ESP_ERR_WIFI_NOT_CONNECT;
@@ -115,12 +115,12 @@ void WifiNetwork::handle_sta_stop() {
 
 void WifiNetwork::handle_sta_connected(wifi_event_sta_connected_t *event) {
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-	ESP_LOGI(kTag, "WiFi is successfully connected to SSID: %s", reinterpret_cast<const char *>(event->ssid));
+	ESP_LOGD(kTag, "WiFi is successfully connected to SSID: %s", reinterpret_cast<const char *>(event->ssid));
 }
 
 void WifiNetwork::handle_sta_disconnected(wifi_event_sta_disconnected_t *event) {
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-	ESP_LOGI(kTag, "WiFi is disconnected from SSID: %s (%s)", reinterpret_cast<char *>(event->ssid), wifi_reason_to_string(event->reason));
+	ESP_LOGD(kTag, "WiFi is disconnected from SSID: %s (%s)", reinterpret_cast<char *>(event->ssid), wifi_reason_to_string(event->reason));
 	xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 
 	handle_sta_reconnect(event);
@@ -135,7 +135,7 @@ void WifiNetwork::handle_sta_reconnect(wifi_event_sta_disconnected_t *event) {
 		esp_wifi_connect();
 		s_retry_num++;
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		ESP_LOGI(kTag, "Retry connecting to %s...", reinterpret_cast<char *>(event->ssid));
+		ESP_LOGD(kTag, "Retry connecting to %s...", reinterpret_cast<char *>(event->ssid));
 	} else {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		ESP_LOGE(kTag, "Too many retries for trying to connect to SSID: %s", reinterpret_cast<char *>(event->ssid));
@@ -144,20 +144,20 @@ void WifiNetwork::handle_sta_reconnect(wifi_event_sta_disconnected_t *event) {
 }
 
 void WifiNetwork::handle_got_ip(ip_event_got_ip_t *event) {
-	ESP_LOGI(kTag, "WiFi successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
+	ESP_LOGD(kTag, "WiFi successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 	s_retry_num = 0;
 	mdns_init();
 	mdns_hostname_set(CONFIG_LWIP_LOCAL_HOSTNAME);
 	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_http", "_tcp", 80, nullptr, 0);
 	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_https", "_tcp", 443, nullptr, 0);
-	ESP_LOGI(kTag, "WiFi successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
+	ESP_LOGD(kTag, "WiFi successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
 	xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 }
 
 void WifiNetwork::handle_lost_ip() {
 	ESP_LOGW(kTag, "WiFi lost IPv4 address");
 	mdns_free();
-	ESP_LOGI(kTag, "MDNS service stopped");
+	ESP_LOGD(kTag, "MDNS service stopped");
 }
 
 constexpr const char *wifi_reason_to_string(wifi_err_reason_t reason) {
