@@ -103,65 +103,54 @@ esp_err_t BlinkingEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t BlinkingEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
 	if (!opt_json) {
 		return ESP_FAIL;
 	}
 
 	this->path = path;
 
-	return EffectParser::parse_with_defaults(opt_json->c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		std::array<char, 64> buf{};
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) {
+		return ESP_FAIL;
+	}
 
-		// ---- name ----
-		if (json_obj_get_string(jctx, "name", buf.data(), buf.size()) == 0) {
-			name_ = buf.data();
-		}
+	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item)) {
+		name_ = item->valuestring;
+	}
 
-		// ---- simple numbers ----
-		int tmp = 0;
-
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &tmp) == 0) {
-			cycle_time_.value = tmp;
-		}
-
-		if (json_obj_get_int(jctx, "parameters.default_brightness", &tmp) == 0) {
-			default_brightness_.value = tmp;
-		}
-
-		// ---- RGB helper ----
-		auto read_rgb = [&](const char *key, RGB &out) {
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			if (json_obj_get_array(jctx, key, nullptr) == 0) {
-				json_arr_get_int(jctx, 0, &red);
-				json_arr_get_int(jctx, 1, &green);
-				json_arr_get_int(jctx, 2, &blue);
-				json_obj_leave_array(jctx);
-
-				out = RGB{.red = static_cast<uint8_t>(red), .green = static_cast<uint8_t>(green), .blue = static_cast<uint8_t>(blue)};
-			}
-		};
-
-		read_rgb("parameters.color_on", color_on_.value);
-		read_rgb("parameters.color_off", color_off_.value);
-
-		// ---- range ----
-		int start = 0;
-		int end = 0;
-
-		if (json_obj_get_array(jctx, "parameters.led_range", nullptr) == 0) {
-			json_arr_get_int(jctx, 0, &start);
-			json_arr_get_int(jctx, 1, &end);
-			json_obj_leave_array(jctx);
-
-			led_range_.value = {static_cast<uint32_t>(start), static_cast<uint32_t>(end)};
-		}
-
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) {
 		return ESP_OK;
-	});
+	}
+
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item)) {
+		cycle_time_.value = static_cast<uint32_t>(item->valuedouble);
+	}
+	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item)) {
+		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);
+	}
+
+	auto read_rgb = [](cJSON *parent, const char *key, RGB &out) {
+		auto *arr = cJSON_GetObjectItem(parent, key);
+		if (!cJSON_IsArray(arr) || cJSON_GetArraySize(arr) < 3) {
+			return;
+		}
+		out.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		out.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		out.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	};
+
+	read_rgb(params, "color_on",  color_on_.value);
+	read_rgb(params, "color_off", color_off_.value);
+
+	if (auto *arr = cJSON_GetObjectItem(params, "led_range"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 2) {
+		led_range_.value = {
+			static_cast<uint32_t>(cJSON_GetArrayItem(arr, 0)->valuedouble),
+			static_cast<uint32_t>(cJSON_GetArrayItem(arr, 1)->valuedouble),
+		};
+	}
+
+	return ESP_OK;
 }
 
 esp_err_t BlinkingEffect::serialize() {

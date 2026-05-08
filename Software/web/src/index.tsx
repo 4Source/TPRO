@@ -2,7 +2,6 @@ import { render } from 'preact';
 import { LocationProvider, Router, Route } from 'preact-iso';
 
 import { Header } from './components/Header/Header';
-import { Home } from './pages/Home/index';
 import { About } from './pages/About/index';
 import { Simulation } from './pages/Simulation';
 import { NotFound } from './pages/_404';
@@ -15,9 +14,9 @@ export function App() {
 			<Header />
 			<main>
 				<Router>
-					<Route path="/" component={Home} />
-					<Route path="/about" component={About} />
+					<Route path="/" component={Simulation} />
 					<Route path="/simulation" component={Simulation} />
+					<Route path="/about" component={About} />
 					<Route path="/browser" component={Files} />
 					<Route default component={NotFound} />
 				</Router>

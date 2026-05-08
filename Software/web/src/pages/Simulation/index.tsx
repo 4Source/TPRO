@@ -7,6 +7,7 @@ import { useTps } from './hooks/useTps';
 import { SettingsMenu } from './components/SettingsMenu';
 import { MatrixViewer } from './components/MatrixViewer';
 import { TimeControls } from './components/TimeControls';
+import { QuickEffectPanel } from './components/QuickEffectPanel';
 import { computeLedContinentMapping, CONTINENT_DEFAULTS } from '../../continent-mapping';
 
 export function Simulation() {
@@ -14,8 +15,8 @@ export function Simulation() {
 	const { tps, sourcePoints, loadFromFile } = useTps();
 
 	const [showMap, setShowMap] = useState(true);
-	const [dotsOpacity, setDotsOpacity] = useState(1);
-	const [mapOpacity, setMapOpacity] = useState(0.5);
+	const [dotsOpacity, setDotsOpacity] = useState(0.5);
+	const [mapOpacity, setMapOpacity] = useState(1);
 	const [timeValue, setTimeValue] = useState(632);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [speed, setSpeed] = useState('x1');
@@ -28,10 +29,25 @@ export function Simulation() {
 	const [ledNumberResult, setLedNumberResult] = useState<LedData | null>(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [darkMode, setDarkMode] = useState(true);
+	const [effectsPath, setEffectsPath] = useState('/effects');
+	const [activeEffectPath, setActiveEffectPath] = useState('');
+	const [dotSize, setDotSize] = useState(50);
 
 	useEffect(() => {
 		setGridData(null);
 	}, [sourcePoints.length]);
+
+	useEffect(() => {
+		Promise.all([
+			fetch('/config?effects_path').then(r => r.ok ? r.text() : '/effects').catch(() => '/effects'),
+			fetch('/config?current_effect').then(r => r.ok ? r.text() : '').catch(() => ''),
+		]).then(([ePath, activePath]) => {
+			const clean = (s: string) => { const v = s.trim().replace(/^"|"$/g, ''); return v.startsWith('<') ? '' : v; };
+			setEffectsPath(clean(ePath) || '/effects');
+			const ap = clean(activePath);
+			setActiveEffectPath(ap.endsWith('.json') ? ap : '');
+		});
+	}, []);
 
 	useEffect(() => {
 		document.documentElement.classList.toggle('page-light-mode', !darkMode);
@@ -116,15 +132,32 @@ export function Simulation() {
 		<div class={`simulation-page${darkMode ? '' : ' sim-light'}`}>
 			<div class="app-container">
 				<div class="sim-toolbar">
-					<button class="sim-toolbar-btn" onClick={() => setMenuOpen(true)}>
-						Einstellungen
-					</button>
+					<div class="sim-toolbar-left">
+						<button class="sim-toolbar-btn" onClick={() => setMenuOpen(true)}>
+							Einstellungen
+						</button>
+						<QuickEffectPanel
+							effectsPath={effectsPath}
+							onEffectChanged={setActiveEffectPath}
+						/>
+					</div>
+					<span class="sim-active-effect">
+						{(() => {
+							if (!activeEffectPath) return 'Aktueller Effekt: Keiner';
+							const t = activeEffectPath.split('/').pop()?.replace('.json', '') ?? '';
+							const label = t.startsWith('my_timeline_') ? t.slice('my_timeline_'.length)
+								: t.startsWith('my_') ? t.slice('my_'.length)
+								: t;
+							return `Aktueller Effekt: ${label}`;
+						})()}
+					</span>
 				</div>
 				<MatrixViewer
 					ledColors={ledColors}
 					showMap={showMap}
 					mapOpacity={mapOpacity}
 					dotsOpacity={dotsOpacity}
+					dotSize={dotSize}
 					clickToCoordinatesMode={clickToCoordinatesMode}
 					tps={tps}
 					onCoordinateClick={setLastCoordinates}
@@ -145,6 +178,7 @@ export function Simulation() {
 				onClose={() => setMenuOpen(false)}
 				darkMode={darkMode}
 				onToggleDarkMode={() => setDarkMode(v => !v)}
+				onEffectActivated={setActiveEffectPath}
 				tps={tps}
 				isCalculating={isCalculating}
 				gridData={gridData}
@@ -162,9 +196,11 @@ export function Simulation() {
 				showMap={showMap}
 				mapOpacity={mapOpacity}
 				dotsOpacity={dotsOpacity}
+				dotSize={dotSize}
 				onToggleMap={() => setShowMap(v => !v)}
 				onMapOpacityChange={setMapOpacity}
 				onDotsOpacityChange={setDotsOpacity}
+				onDotSizeChange={setDotSize}
 			/>
 		</div>
 	);

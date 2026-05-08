@@ -1,4 +1,5 @@
 #include "routes.hpp"
+#include "effectserver.hpp"
 #include "fileserver.hpp"
 #include "https_server.hpp"
 #include "restserver.hpp"
@@ -115,6 +116,13 @@ static const std::array kHttpsRoutes{
 	httpd_uri_t{.uri = "/file/*",
 				.method = HTTP_GET,
 				.handler = Fileserver::file_get_handler,
+				.user_ctx = nullptr,
+				.is_websocket = false,
+				.handle_ws_control_frames = false,
+				.supported_subprotocol = nullptr},
+	httpd_uri_t{.uri = "/effect/*",
+				.method = HTTP_PUT,
+				.handler = EffectServer::handle_put_effect,
 				.user_ctx = nullptr,
 				.is_websocket = false,
 				.handle_ws_control_frames = false,

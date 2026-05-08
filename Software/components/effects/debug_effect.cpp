@@ -45,39 +45,22 @@ esp_err_t DebugEffect::set_parameter(const char *name, const char *value) { retu
 // -----------------
 esp_err_t DebugEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
 	if (!opt_json) {
-		// Read failed
 		ESP_LOGW(kTag, "Read failed");
 		return ESP_FAIL;
 	}
-
 	this->path = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer.data(), path_buffer.size(), [this](jparse_ctx_t *jctx) {
-		// version
-		std::array<char, 32> version_buf{};
-		if (json_obj_get_string(jctx, "version", version_buf.data(), version_buf.size()) == 0) {
-			this->version = version_buf.data();
-		}
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		// name
-		std::array<char, 32> name_buf{};
-		if (json_obj_get_string(jctx, "name", name_buf.data(), name_buf.size()) == 0) {
-			this->name = name_buf.data();
-		}
+	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
+		this->name = item->valuestring;
 
-		// type
-		std::array<char, 32> type_buf{};
-		if (json_obj_get_string(jctx, "type", type_buf.data(), type_buf.size()) == 0) {
-			if (type_buf.data() != kType) {
-				ESP_LOGW(Effect::kTag, "Type miss match durring effect parsing! expected: %s received: %s", kType, type_buf);
-				return ESP_FAIL;
-			}
-		}
+	if (auto *item = cJSON_GetObjectItem(root.get(), "version"); cJSON_IsString(item))
+		this->version = item->valuestring;
 
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t DebugEffect::serialize() {

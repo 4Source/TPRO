@@ -9,6 +9,7 @@ type Props = {
 	showMap: boolean;
 	mapOpacity: number;
 	dotsOpacity: number;
+	dotSize: number;
 	clickToCoordinatesMode: boolean;
 	tps: ThinPlateSpline | null;
 
@@ -16,7 +17,7 @@ type Props = {
 	onCoordinateClick: (_coords: Coordinates) => void;
 };
 
-export function MatrixViewer({ ledColors, showMap, mapOpacity, dotsOpacity, clickToCoordinatesMode, tps, onCoordinateClick }: Props) {
+export function MatrixViewer({ ledColors, showMap, mapOpacity, dotsOpacity, dotSize, clickToCoordinatesMode, tps, onCoordinateClick }: Props) {
 	const { zoom, pan, isDragging, handleWheel, handleMouseDown, handleMouseMove, handleMouseUp } = useZoomPan();
 
 	const handleMatrixClick = (e: MouseEvent) => {
@@ -50,6 +51,8 @@ export function MatrixViewer({ ledColors, showMap, mapOpacity, dotsOpacity, clic
 				)}
 				<div
 					class={`matrix-grid ${clickToCoordinatesMode ? 'cursor-crosshair' : 'cursor-default'}`}
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				style={{ '--dot-fill': String(dotSize / 100) } as any}
 					onClick={handleMatrixClick}
 				>
 					{ledColors.map((color, index) => (

@@ -5,7 +5,7 @@ message(STATUS "-------------------------------------------------------")
 
 # KConfig Httpsserver aktiv sonst nichts registrieren
 set(srcs "")
-set(requires "esp_http_server" "esp_https_server" "mbedtls" "led" "config_manager" "task_handles" "network" "apis" "file_manager")
+set(requires "esp_http_server" "esp_https_server" "mbedtls" "led" "config_manager" "task_handles" "network" "apis" "file_manager" "light_effect_manager")
 set(embed "")
 set(embed_txt "")
 set(include_dirs "include")
@@ -13,7 +13,8 @@ set(include_dirs "include")
 if(CONFIG_ENABLE_HTTPS_SERVER)
     message(STATUS "Configure https_server component: ENABLED")
     
-    set(srcs 
+    set(srcs
+        "effectserver.cpp"
         "fileserver.cpp"
         "https_server.cpp"
         "webserver.cpp"

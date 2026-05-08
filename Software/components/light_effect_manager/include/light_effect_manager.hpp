@@ -39,6 +39,9 @@ class LightEffectManager : public ConfigObserver {
 	// get effect via path when effects doesnt exist create it via factory
 	std::shared_ptr<Effect> get_effect(const std::string &path);
 
+	// Effekt aus Cache entfernen, neu aus Datei laden, bei Bedarf hot-swap
+	esp_err_t reload_effect(const std::string &path);
+
 	// Update-Logik
 	esp_err_t run();
 

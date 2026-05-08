@@ -8,6 +8,7 @@
 #include "led_controller.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
+#include "effectserver.hpp"
 #include "restserver.hpp"
 #include "timeserver.hpp"
 #include "websocket_server.hpp"
@@ -138,6 +139,7 @@ extern "C" void app_main(void) {
 	ESP_ERROR_CHECK(HttpsServer::init([&](httpd_handle_t handle) {
 		handle_websocket_state(handle);
 		RestServer::init(main_config, handle);
+		EffectServer::init(effect_manager);
 	}));
 
 	/*
@@ -158,11 +160,11 @@ extern "C" void app_main(void) {
 	EffectFactory::writeDefaults("/effects/defaults");
 	// FileManager::print_default_configs(); Sollte später alle defaults ausprinten
 
-	// // Load Configuration from SD Card
-	// if (main_config.deserialize() != ESP_OK) {
-	// 	ESP_LOGW(kTag, "Failed to load /config.json, creating default config.");
-	// 	main_config.serialize();
-	// }
+	// Load Configuration from SD Card
+	if (main_config.deserialize() != ESP_OK) {
+		ESP_LOGW(kTag, "Failed to load /config.json, creating default config.");
+		main_config.serialize();
+	}
 
 	// Start Effect
 	// std::string current_effect_path = ColumnScanEffect::kDefaultConfigPath;
@@ -183,8 +185,10 @@ extern "C" void app_main(void) {
 
 	// auto main_timeline = EffectFactory::generate_from_json(ContinentEffect::kDefaultConfigPath);
 	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_continent.json");
-	auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_full.json");
-	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
+	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_full.json");
+	effect_manager.set_config_manager(&main_config);
+
+	auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
 	effect_manager.register_effect(main_timeline);
 	effect_manager.set_effect(main_timeline);
 	effect_manager.start();

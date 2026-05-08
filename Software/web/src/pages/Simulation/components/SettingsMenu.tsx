@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { OpacitySlider } from '../../../components/OpacitySlider/OpacitySlider';
 import { EffectPanel } from './EffectPanel';
 import type { ThinPlateSpline } from '../../../tps';
@@ -14,6 +14,8 @@ type Props = {
 	isCalculating: boolean;
 	gridData: LedData[] | null;
 	sourcePoints: number[][];
+	// eslint-disable-next-line no-unused-vars
+	onEffectActivated: (_path: string) => void;
 
 	// eslint-disable-next-line no-unused-vars
 	onFileUpload: (_e: Event) => void;
@@ -31,6 +33,7 @@ type Props = {
 	showMap: boolean;
 	mapOpacity: number;
 	dotsOpacity: number;
+	dotSize: number;
 	onToggleMap: () => void;
 
 	// eslint-disable-next-line no-unused-vars
@@ -38,6 +41,9 @@ type Props = {
 
 	// eslint-disable-next-line no-unused-vars
 	onDotsOpacityChange: (_value: number) => void;
+
+	// eslint-disable-next-line no-unused-vars
+	onDotSizeChange: (_value: number) => void;
 };
 
 export function SettingsMenu({
@@ -46,9 +52,25 @@ export function SettingsMenu({
 	tps, isCalculating, gridData, sourcePoints, onFileUpload, onCalculate, onExport,
 	clickToCoordinatesMode, lastCoordinates, onToggleCoordinates,
 	ledNumberInput, ledNumberResult, onLedInputChange, onLedSearch,
-	showMap, mapOpacity, dotsOpacity, onToggleMap, onMapOpacityChange, onDotsOpacityChange,
+	showMap, mapOpacity, dotsOpacity, dotSize, onToggleMap, onMapOpacityChange, onDotsOpacityChange, onDotSizeChange,
+	onEffectActivated,
 }: Props) {
 	const [showEffects, setShowEffects] = useState(false);
+	const [activeFrom, setActiveFrom] = useState('07:00');
+	const [activeTo, setActiveTo] = useState('18:00');
+
+	useEffect(() => {
+		const clean = (t: string) => t.trim().replace(/^"|"$/g, '');
+		Promise.all([
+			fetch('/config?active_from').then(r => r.ok ? r.text() : '').catch(() => ''),
+			fetch('/config?active_to').then(r => r.ok ? r.text() : '').catch(() => ''),
+		]).then(([from, to]) => {
+			const f = clean(from);
+			const t = clean(to);
+			if (/^\d{2}:\d{2}$/.test(f)) setActiveFrom(f);
+			if (/^\d{2}:\d{2}$/.test(t)) setActiveTo(t);
+		});
+	}, []);
 
 	const [sunStatus, setSunStatus] = useState<string | null>(null);
 	const [sunProgress, setSunProgress] = useState("");
@@ -70,6 +92,10 @@ export function SettingsMenu({
 			setSunStatus(status);
 			setSunProgress(progress);
 		});
+	const saveTime = (key: 'active_from' | 'active_to', value: string) => {
+		if (/^\d{2}:\d{2}$/.test(value)) {
+			fetch(`/config?${key}=${encodeURIComponent(value)}`, { method: 'PUT' }).catch(() => { });
+		}
 	};
 
 	const handleClose = () => {
@@ -97,10 +123,73 @@ export function SettingsMenu({
 				{/* Body */}
 				{showEffects ? (
 					<div class="settings-panel-body">
-						<EffectPanel />
+						<EffectPanel onEffectActivated={onEffectActivated} />
 					</div>
 				) : (
 					<div class="settings-panel-body">
+
+						{/* Effekt */}
+						<div class="settings-section">
+							<p class="settings-section-title">Effekt</p>
+							<button class="settings-nav-btn" onClick={() => setShowEffects(true)}>
+								Effekt auswählen
+								<span class="settings-nav-arrow">→</span>
+							</button>
+						</div>
+
+						{/* Zeitschaltung */}
+						<div class="settings-section">
+							<p class="settings-section-title">Zeitschaltung</p>
+							<div class="settings-time-row">
+								<label class="settings-time-label">Von</label>
+								<input
+									type="time"
+									value={activeFrom}
+									onInput={(e) => setActiveFrom((e.target as HTMLInputElement).value)}
+									onChange={(e) => saveTime('active_from', (e.target as HTMLInputElement).value)}
+									class="settings-time-input"
+								/>
+								<label class="settings-time-label">Bis</label>
+								<input
+									type="time"
+									value={activeTo}
+									onInput={(e) => setActiveTo((e.target as HTMLInputElement).value)}
+									onChange={(e) => saveTime('active_to', (e.target as HTMLInputElement).value)}
+									class="settings-time-input"
+								/>
+							</div>
+						</div>
+
+						{/* Sichtbarkeit */}
+						<div class="settings-section">
+							<p class="settings-section-title">Sichtbarkeit</p>
+							<label class="flex items-center gap-2 cursor-pointer select-none mb-3">
+								<input
+									type="checkbox"
+									checked={showMap}
+									onChange={onToggleMap}
+									class="w-5 h-5 cursor-pointer accent-blue-500"
+								/>
+								<span class="settings-label-text">Weltkarte anzeigen</span>
+							</label>
+							<div class="flex flex-col gap-2">
+								<OpacitySlider label="Karte" value={mapOpacity} accent="blue" disabled={!showMap} onChange={onMapOpacityChange} />
+								<OpacitySlider label="Punkte" value={dotsOpacity} accent="purple" onChange={onDotsOpacityChange} />
+							</div>
+							<div class="flex items-center gap-3 bg-gray-900 px-4 py-1.5 rounded-lg border border-gray-700 mt-3">
+								<span class="text-xs text-gray-400 uppercase tracking-wider font-bold">Grösse</span>
+								<input
+									type="range"
+									min="0"
+									max="100"
+									step="1"
+									value={dotSize}
+									onInput={(e) => onDotSizeChange(parseInt((e.target as HTMLInputElement).value, 10))}
+									class="w-32 h-1.5 cursor-pointer accent-green-500"
+								/>
+								<span class="text-xs font-mono w-8 text-right text-white">{dotSize}%</span>
+							</div>
+						</div>
 
 						{/* Datei */}
 						<div class="settings-section">
@@ -196,33 +285,6 @@ export function SettingsMenu({
 									<p>lon/lat: {ledNumberResult.lon.toFixed(5)}, {ledNumberResult.lat.toFixed(5)}</p>
 								</div>
 							)}
-						</div>
-
-						{/* Sichtbarkeit */}
-						<div class="settings-section">
-							<p class="settings-section-title">Sichtbarkeit</p>
-							<label class="flex items-center gap-2 cursor-pointer select-none mb-3">
-								<input
-									type="checkbox"
-									checked={showMap}
-									onChange={onToggleMap}
-									class="w-5 h-5 cursor-pointer accent-blue-500"
-								/>
-								<span class="settings-label-text">Weltkarte anzeigen</span>
-							</label>
-							<div class="flex flex-col gap-2">
-								<OpacitySlider label="Karte" value={mapOpacity} accent="blue" disabled={!showMap} onChange={onMapOpacityChange} />
-								<OpacitySlider label="Punkte" value={dotsOpacity} accent="purple" onChange={onDotsOpacityChange} />
-							</div>
-						</div>
-
-						{/* Effekt */}
-						<div class="settings-section">
-							<p class="settings-section-title">Effekt</p>
-							<button class="settings-nav-btn" onClick={() => setShowEffects(true)}>
-								Effekt auswählen
-								<span class="settings-nav-arrow">→</span>
-							</button>
 						</div>
 
 						{/* Design */}

@@ -120,74 +120,45 @@ esp_err_t PlasmaEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t PlasmaEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.default_brightness", &tmp) == 0) {
-			default_brightness_.value = static_cast<uint8_t>(tmp);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &tmp) == 0) {
-			cycle_time_.value = static_cast<uint32_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
+		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
+		cycle_time_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.scale", &tmp) == 0) {
-			scale_.value = static_cast<uint8_t>(tmp);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		int num = 0;
+	if (auto *item = cJSON_GetObjectItem(params, "scale"); cJSON_IsNumber(item))
+		scale_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.led_range", &num) == 0 && num >= 2) {
-			int begin = 0;
-			int end = 0;
+	if (auto *arr = cJSON_GetObjectItem(params, "led_range"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 2) {
+		led_range_start_.value = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		led_range_end_.value   = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+	}
 
-			json_arr_get_int(jctx, 0, &begin);
-			json_arr_get_int(jctx, 1, &end);
-			json_obj_leave_array(jctx);
+	if (auto *arr = cJSON_GetObjectItem(params, "color_on"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		color_on_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		color_on_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		color_on_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-			led_range_start_.value = static_cast<uint32_t>(begin);
-			led_range_end_.value = static_cast<uint32_t>(end);
-		}
+	if (auto *arr = cJSON_GetObjectItem(params, "color_off"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
+		color_off_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		color_off_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		color_off_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+	}
 
-		if (json_obj_get_array(jctx, "parameters.color_on", &num) == 0 && num >= 3) {
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			json_arr_get_int(jctx, 0, &red);
-			json_arr_get_int(jctx, 1, &green);
-			json_arr_get_int(jctx, 2, &blue);
-			json_obj_leave_array(jctx);
-
-			color_on_.value = RGB{.red = static_cast<uint8_t>(red), .green = static_cast<uint8_t>(green), .blue = static_cast<uint8_t>(blue)};
-		}
-
-		if (json_obj_get_array(jctx, "parameters.color_off", &num) == 0 && num >= 3) {
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			json_arr_get_int(jctx, 0, &red);
-			json_arr_get_int(jctx, 1, &green);
-			json_arr_get_int(jctx, 2, &blue);
-			json_obj_leave_array(jctx);
-
-			color_off_.value = RGB{.red = static_cast<uint8_t>(red), .green = static_cast<uint8_t>(green), .blue = static_cast<uint8_t>(blue)};
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t PlasmaEffect::serialize() {

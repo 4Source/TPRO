@@ -136,58 +136,39 @@ esp_err_t FireEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t FireEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-
-	if (!opt_json) {
-		return ESP_FAIL;
-	}
-
+	if (!opt_json) { return ESP_FAIL; }
 	this->path_ = path;
 
-	return EffectParser::parse_with_defaults(opt_json.value().c_str(), path_buffer_.data(), path_buffer_.size(), [this](jparse_ctx_t *jctx) {
-		int tmp_val = 0;
+	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
+	if (!root) { return ESP_FAIL; }
 
-		if (json_obj_get_int(jctx, "parameters.default_brightness", &tmp_val) == 0) {
-			default_brightness_.value = static_cast<uint8_t>(tmp_val);
-		}
+	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
+	if (!params) { return ESP_OK; }
 
-		if (json_obj_get_int(jctx, "parameters.cycle_time", &tmp_val) == 0) {
-			cycle_time_.value = static_cast<uint32_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
+		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.speed", &tmp_val) == 0) {
-			speed_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
+		cycle_time_.value = static_cast<uint32_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.scale", &tmp_val) == 0) {
-			scale_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
+		speed_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.cooling", &tmp_val) == 0) {
-			cooling_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "scale"); cJSON_IsNumber(item))
+		scale_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_int(jctx, "parameters.sparking", &tmp_val) == 0) {
-			sparking_.value = static_cast<uint8_t>(tmp_val);
-		}
+	if (auto *item = cJSON_GetObjectItem(params, "cooling"); cJSON_IsNumber(item))
+		cooling_.value = static_cast<uint8_t>(item->valuedouble);
 
-		int num_val = 0;
+	if (auto *item = cJSON_GetObjectItem(params, "sparking"); cJSON_IsNumber(item))
+		sparking_.value = static_cast<uint8_t>(item->valuedouble);
 
-		if (json_obj_get_array(jctx, "parameters.led_range", &num_val) == 0 && num_val >= 2) {
+	if (auto *arr = cJSON_GetObjectItem(params, "led_range"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 2) {
+		led_range_start_.value = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		led_range_end_.value   = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+	}
 
-			int st_val = 0;
-			int en_val = 0;
-
-			json_arr_get_int(jctx, 0, &st_val);
-			json_arr_get_int(jctx, 1, &en_val);
-			json_obj_leave_array(jctx);
-
-			led_range_start_.value = static_cast<uint32_t>(st_val);
-
-			led_range_end_.value = static_cast<uint32_t>(en_val);
-		}
-
-		return ESP_OK;
-	});
+	return ESP_OK;
 }
 
 esp_err_t FireEffect::serialize() {
