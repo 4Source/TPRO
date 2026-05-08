@@ -17,8 +17,8 @@ typedef enum {
 #define ESP_LOGW(tag, format, ...) printf("[WARN ][%s] " format "\n", tag, ##__VA_ARGS__)
 #define ESP_LOGD(tag, format, ...) printf("[DEBUG][%s] " format "\n", tag, ##__VA_ARGS__)
 #define ESP_LOGV(tag, format, ...) printf("[VERB ][%s] " format "\n", tag, ##__VA_ARGS__)
-#ifndef ESP_LOGI
-#define ESP_LOGI(tag, format, ...) printf("[INFO ][%s] " format "\n", tag, ##__VA_ARGS__)
+#ifndef ESP_LOGD
+#define ESP_LOGD(tag, format, ...) printf("[INFO ][%s] " format "\n", tag, ##__VA_ARGS__)
 #endif
 #ifndef ESP_LOGE
 #define ESP_LOGE(tag, format, ...) printf("[ERROR][%s] " format "\n", tag, ##__VA_ARGS__)

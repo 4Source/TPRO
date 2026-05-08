@@ -23,19 +23,19 @@ void time_received(struct timeval *timeval) {
 	// time has been synchronized
 	g_time_synchronized = true;
 
-	ESP_LOGI(kTag, "Time synchronized successfully %s", DateTime::to_string().c_str());
+	ESP_LOGD(kTag, "Time synchronized successfully %s", DateTime::to_string().c_str());
 }
 
 void init_timeserver() {
 	auto servers = std::span{kGListOfTimeservers};
-	ESP_LOGI(kTag, "Initializing timeserver");
+	ESP_LOGD(kTag, "Initializing timeserver");
 
 	// List of timeservers
-	ESP_LOGI(kTag, "List of timeservers: %s, %s", servers[0], servers[1]);
+	ESP_LOGD(kTag, "List of timeservers: %s, %s", servers[0], servers[1]);
 
 	// Set a timeserver
 	esp_sntp_setservername(currently_used_server, servers[currently_used_server]);
-	ESP_LOGI(kTag, "using Timeserver: %s", servers[currently_used_server]);
+	ESP_LOGD(kTag, "using Timeserver: %s", servers[currently_used_server]);
 
 	// timeserver should be polled every POLLING_INTERVAL milliseconds
 	esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
@@ -49,12 +49,12 @@ void init_timeserver() {
 	// Set timezone to see the timezones see https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 	setenv("TZ", CONFIG_TIMEZONE, 1);
 	tzset();
-	ESP_LOGI(kTag, "Set timezone: %s", CONFIG_TIMEZONE);
+	ESP_LOGD(kTag, "Set timezone: %s", CONFIG_TIMEZONE);
 }
 
 bool is_time_synchronized() {
 	if (!g_time_synchronized) {
-		ESP_LOGI(kTag, "Time is not synchronized yet");
+		ESP_LOGD(kTag, "Time is not synchronized yet");
 	}
 	return g_time_synchronized;
 }
@@ -73,14 +73,14 @@ void try_next_timeserver() {
 	if (currently_used_server >= servers.size()) {
 		currently_used_server = 0;
 	}
-	ESP_LOGI(kTag, "switched to timeserver %s", servers[currently_used_server]);
+	ESP_LOGD(kTag, "switched to timeserver %s", servers[currently_used_server]);
 
 	// restart with new timeserver
 	init_timeserver();
 }
 
 void stop_timeserver() {
-	ESP_LOGI(kTag, "Stopped timeserver");
+	ESP_LOGD(kTag, "Stopped timeserver");
 	// no longer synchronized
 	g_time_synchronized = false;
 	esp_sntp_stop();

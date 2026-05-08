@@ -25,7 +25,7 @@ ContinentEffect::ContinentEffect() {
 	this->_land_pixels = std::make_shared<std::vector<ContinentNode>>();
 	this->_land_pixels->reserve(1200); // Reserviere Platz für geschätzt 1200 Land-LEDs
 
-	ESP_LOGI(Effect::kTag, "Loading continent mapping from 'led-config.json'...");
+	ESP_LOGD(Effect::kTag, "Loading continent mapping from 'led-config.json'...");
 
 	FILE *file = FileManager::open_file("led-config.json", "rb");
 	if (file == nullptr) {
@@ -128,7 +128,7 @@ ContinentEffect::ContinentEffect() {
 	this->_land_pixels->shrink_to_fit();
 
 	FileManager::close_file(file);
-	ESP_LOGI(Effect::kTag, "Mapping geladen! %d Land-LEDs extrem speichersparend hinterlegt.", led_count);
+	ESP_LOGD(Effect::kTag, "Mapping geladen! %d Land-LEDs extrem speichersparend hinterlegt.", led_count);
 }
 
 // Fallback, falls setWeight in der Applikation noch aufgerufen wird
@@ -240,7 +240,7 @@ esp_err_t ContinentEffect::serialize() {
 esp_err_t ContinentEffect::deserialize(std::string path) {
 	// 1. Datei streamend öffnen
 	FILE *file = FileManager::open_file(path, "rb");
-	ESP_LOGI(Effect::kTag, "Read file for path: %s", path.c_str());
+	ESP_LOGD(Effect::kTag, "Read file for path: %s", path.c_str());
 	if (file == nullptr) {
 		ESP_LOGW(Effect::kTag, "Read failed for path: %s", path.c_str());
 		return ESP_FAIL;
@@ -294,19 +294,19 @@ esp_err_t ContinentEffect::deserialize(std::string path) {
 		read_color("australia", this->color_australia_);
 		read_color("ocean", this->color_ocean_);
 	}
-	ESP_LOGI(Effect::kTag, "Deserialized!");
-	ESP_LOGI(Effect::kTag, "Color North: R=%d G=%d B=%d", this->color_north_.value.red, this->color_north_.value.green,
+	ESP_LOGD(Effect::kTag, "Deserialized!");
+	ESP_LOGD(Effect::kTag, "Color North: R=%d G=%d B=%d", this->color_north_.value.red, this->color_north_.value.green,
 			 this->color_north_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color South: R=%d G=%d B=%d", this->color_south_.value.red, this->color_south_.value.green,
+	ESP_LOGD(Effect::kTag, "Color South: R=%d G=%d B=%d", this->color_south_.value.red, this->color_south_.value.green,
 			 this->color_south_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color Europe: R=%d G=%d B=%d", this->color_europe_.value.red, this->color_europe_.value.green,
+	ESP_LOGD(Effect::kTag, "Color Europe: R=%d G=%d B=%d", this->color_europe_.value.red, this->color_europe_.value.green,
 			 this->color_europe_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color Africa: R=%d G=%d B=%d", this->color_africa_.value.red, this->color_africa_.value.green,
+	ESP_LOGD(Effect::kTag, "Color Africa: R=%d G=%d B=%d", this->color_africa_.value.red, this->color_africa_.value.green,
 			 this->color_africa_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color Asia: R=%d G=%d B=%d", this->color_asia_.value.red, this->color_asia_.value.green, this->color_asia_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color Australia: R=%d G=%d B=%d", this->color_australia_.value.red, this->color_australia_.value.green,
+	ESP_LOGD(Effect::kTag, "Color Asia: R=%d G=%d B=%d", this->color_asia_.value.red, this->color_asia_.value.green, this->color_asia_.value.blue);
+	ESP_LOGD(Effect::kTag, "Color Australia: R=%d G=%d B=%d", this->color_australia_.value.red, this->color_australia_.value.green,
 			 this->color_australia_.value.blue);
-	ESP_LOGI(Effect::kTag, "Color Ocean: R=%d G=%d B=%d", this->color_ocean_.value.red, this->color_ocean_.value.green,
+	ESP_LOGD(Effect::kTag, "Color Ocean: R=%d G=%d B=%d", this->color_ocean_.value.red, this->color_ocean_.value.green,
 			 this->color_ocean_.value.blue);
 
 	return ESP_OK;

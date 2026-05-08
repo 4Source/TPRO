@@ -31,4 +31,6 @@ class DateTime {
 	 * Gibt die aktuelle Zeit als TimeComponents zurück
 	 */
 	static TimeComponents get_now();
+
+	static TimeComponents add_days(const TimeComponents &base, int days);
 };

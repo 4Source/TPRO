@@ -28,7 +28,7 @@ static constexpr const char *kTag = "routes";
 static esp_err_t register_route(httpd_handle_t handle, const httpd_uri_t *uri_handler) {
 	esp_err_t ret = httpd_register_uri_handler(handle, uri_handler);
 	if (ret == ESP_OK) {
-		ESP_LOGI(kTag, "\tRegistered route: %s %s", HttpsServer::http_method_to_str(uri_handler->method), uri_handler->uri);
+		ESP_LOGD(kTag, "\tRegistered route: %s %s", HttpsServer::http_method_to_str(uri_handler->method), uri_handler->uri);
 	} else {
 		ESP_LOGE(kTag, "\tFailed to registered route: %s %s", HttpsServer::http_method_to_str(uri_handler->method), uri_handler->uri);
 	}
@@ -152,7 +152,7 @@ static const std::array kHttpsRoutes{
 // NOLINTEND(cppcoreguidelines-interfaces-global-init)
 
 esp_err_t register_https_routes(httpd_handle_t handle) {
-	ESP_LOGI(kTag, "Register https routes:");
+	ESP_LOGD(kTag, "Register https routes:");
 	for (const auto &route : kHttpsRoutes) {
 		esp_err_t err = register_route(handle, &route);
 		if (err != ESP_OK) {

@@ -5,17 +5,57 @@
 
 // Jeder Effekt im vektor _subeffects hat eine cycle time
 struct TimelineStep {
-	std::shared_ptr<Effect> effect;
-	uint32_t duration_ms;
-	uint32_t start_ms;
-	uint32_t id;
+	std::shared_ptr<Effect> effect = nullptr;
+	uint32_t duration_ms = 0;
+	uint32_t start_ms = 0;
+	uint32_t id = 0;
 };
 
 struct TimelineSecondaryItem {
-	uint32_t id;
-	uint32_t cycle_time;
-	// Map für n beliebige Key-Value Paare
+	uint32_t id = 0;
+	uint32_t cycle_time = 0;
+	uint32_t interrupt_time = 0; // Dauer des Interrupts in ms
+
+	struct {
+		uint8_t month = 0; // 0 = jeden Monat
+		uint8_t day = 0;   // 0 = jeden Tag
+		int8_t hour = -1;  // -1 = jede Stunde
+		uint8_t minute = 0;
+	} trigger;
+
 	std::map<std::string, std::string> overwrites;
+
+	bool is_active(const DateTime::TimeComponents &now) const {
+		if (trigger.month != 0 && trigger.month != now.month)
+			return false;
+		if (trigger.day != 0 && trigger.day != now.day)
+			return false;
+
+		if (trigger.hour == -1 || trigger.hour == (int8_t)now.hour) {
+			uint32_t trigger_ms, current_ms;
+			if (trigger.hour == -1) {
+				trigger_ms = trigger.minute * 60000;
+				current_ms = (now.minute * 60000) + (now.second * 1000) + now.millisecond;
+			} else {
+				trigger_ms = (trigger.hour * 3600000) + (trigger.minute * 60000);
+				current_ms = (now.hour * 3600000) + (now.minute * 60000) + (now.second * 1000) + now.millisecond;
+			}
+			return (current_ms >= trigger_ms && current_ms < (trigger_ms + interrupt_time));
+		}
+		return false;
+	}
+
+	uint32_t get_elapsed_ms(const DateTime::TimeComponents &now) const {
+		uint32_t current_ms, trigger_ms;
+		if (trigger.hour == -1) {
+			trigger_ms = trigger.minute * 60000;
+			current_ms = (now.minute * 60000) + (now.second * 1000) + now.millisecond;
+		} else {
+			trigger_ms = (trigger.hour * 3600000) + (trigger.minute * 60000);
+			current_ms = (now.hour * 3600000) + (now.minute * 60000) + (now.second * 1000) + now.millisecond;
+		}
+		return current_ms - trigger_ms;
+	}
 };
 
 struct TimelineSubeffectConfig {
@@ -79,4 +119,5 @@ class TimelineEffect : public Effect {
 	esp_err_t parse_dynamic_secondary(const char *raw_json);
 
 	std::string current_active_name_{""}; // Logging
+	esp_err_t build_timeline_steps();
 };

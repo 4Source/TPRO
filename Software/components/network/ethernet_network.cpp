@@ -52,15 +52,15 @@ esp_eth_handle_t EthernetNetwork::s_eth_handle = nullptr;
 EventGroupHandle_t EthernetNetwork::s_eth_event_group = xEventGroupCreate();
 
 esp_err_t EthernetNetwork::init() {
-	ESP_LOGI(kTag, "Setup ethernet connection...");
+	ESP_LOGD(kTag, "Setup ethernet connection...");
 
 	// Hardware Reset erzwingen
 	gpio_reset_pin((gpio_num_t)CONFIG_ETHERNET_RST_GPIO);
 	gpio_set_direction((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, GPIO_MODE_OUTPUT);
-	ESP_LOGI(kTag, "Pull RST pin LOW to reset ethernet chip");
+	ESP_LOGD(kTag, "Pull RST pin LOW to reset ethernet chip");
 	gpio_set_level((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, 0);
 	vTaskDelay(pdMS_TO_TICKS(200));
-	ESP_LOGI(kTag, "Pull RST pin HIGH to reset ethernet chip");
+	ESP_LOGD(kTag, "Pull RST pin HIGH to reset ethernet chip");
 	gpio_set_level((gpio_num_t)CONFIG_ETHERNET_RST_GPIO, 1);
 	vTaskDelay(pdMS_TO_TICKS(500)); // Wartezeit nach Reset
 
@@ -124,7 +124,7 @@ esp_err_t EthernetNetwork::init() {
 }
 
 esp_err_t EthernetNetwork::connect() {
-	ESP_LOGI(kTag, "Start ethernet connection...");
+	ESP_LOGD(kTag, "Start ethernet connection...");
 
 	ESP_RETURN_ON_ERROR(esp_eth_start(s_eth_handle), kTag, "Failed to start ethernet");
 
@@ -137,7 +137,7 @@ esp_err_t EthernetNetwork::wait_for_connection() {
 	// TODO: implement a timeout after connection when the connection should fail
 	// xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually happened.
 	if ((bits & ETH_CONNECTED_BIT) != 0) {
-		ESP_LOGI(kTag, "Connected to ethernet");
+		ESP_LOGD(kTag, "Connected to ethernet");
 	} else if ((bits & ETH_CONNECTION_FAILED_BIT) != 0) {
 		ESP_LOGE(kTag, "Failed to connect ethernet");
 		return ESP_FAIL;
@@ -213,30 +213,30 @@ void EthernetNetwork::handle_eth_stop() {
 void EthernetNetwork::handle_eth_connected(esp_eth_handle_t event) {
 	std::array<uint8_t, 6> mac_addr{0};
 	esp_eth_ioctl(event, ETH_CMD_G_MAC_ADDR, mac_addr.data());
-	ESP_LOGI(kTag, "Ethernet is successfully connected as MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac_addr.at(0), mac_addr.at(1), mac_addr.at(2),
+	ESP_LOGD(kTag, "Ethernet is successfully connected as MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac_addr.at(0), mac_addr.at(1), mac_addr.at(2),
 			 mac_addr.at(3), mac_addr.at(4), mac_addr.at(5));
 }
 
 void EthernetNetwork::handle_eth_disconnected(esp_eth_handle_t event) {
 	std::array<uint8_t, 6> mac_addr{0};
 	esp_eth_ioctl(event, ETH_CMD_G_MAC_ADDR, mac_addr.data());
-	ESP_LOGI(kTag, "Ethernet is disconnected as MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac_addr.at(0), mac_addr.at(1), mac_addr.at(2), mac_addr.at(3),
+	ESP_LOGD(kTag, "Ethernet is disconnected as MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac_addr.at(0), mac_addr.at(1), mac_addr.at(2), mac_addr.at(3),
 			 mac_addr.at(4), mac_addr.at(5));
 	xEventGroupClearBits(s_eth_event_group, ETH_CONNECTED_BIT);
 }
 
 void EthernetNetwork::handle_got_ip(ip_event_got_ip_t *event) {
-	ESP_LOGI(kTag, "Ethernet successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
+	ESP_LOGD(kTag, "Ethernet successfully got IPv4 address: " IPSTR, IP2STR(&event->ip_info.ip));
 	mdns_init();
 	mdns_hostname_set(CONFIG_LWIP_LOCAL_HOSTNAME);
 	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_http", "_tcp", 80, nullptr, 0);
 	mdns_service_add(CONFIG_LWIP_LOCAL_HOSTNAME, "_https", "_tcp", 443, nullptr, 0);
-	ESP_LOGI(kTag, "Ethernet successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
+	ESP_LOGD(kTag, "Ethernet successfully got mDNS address: %s.local", CONFIG_LWIP_LOCAL_HOSTNAME);
 	xEventGroupSetBits(s_eth_event_group, ETH_CONNECTED_BIT);
 }
 
 void EthernetNetwork::handle_lost_ip() {
 	ESP_LOGW(kTag, "Ethernet lost IPv4 address");
 	mdns_free();
-	ESP_LOGI(kTag, "MDNS service stopped");
+	ESP_LOGD(kTag, "MDNS service stopped");
 }

@@ -66,7 +66,7 @@ esp_err_t LightEffectManager::register_effect(const std::shared_ptr<Effect> &eff
 		return ESP_OK; // schon vorhanden
 	}
 
-	ESP_LOGI(kTag, "Registered effect: '%s' from '%s'", effect->get_name().c_str(), effect->get_filepath().c_str());
+	ESP_LOGD(kTag, "Registered effect: '%s' from '%s'", effect->get_name().c_str(), effect->get_filepath().c_str());
 
 	available_effects_.push_back(effect);
 	return ESP_OK;
@@ -150,9 +150,9 @@ esp_err_t LightEffectManager::run() {
 	}
 
 	if (log_counter % 500 == 0) {
-		ESP_LOGI(kTag, "Effect generated new frame for timestamp %u-%02u-%02u %02u:%02u:%02u", time_stamp.year, time_stamp.month, time_stamp.day,
+		ESP_LOGD(kTag, "Effect generated new frame for timestamp %u-%02u-%02u %02u:%02u:%02u", time_stamp.year, time_stamp.month, time_stamp.day,
 				 time_stamp.hour, time_stamp.minute, time_stamp.second);
-		ESP_LOGI(kTag, "New frame data_ (first LED): R=%d G=%d B=%d", this->working_frame_.led_data[0][0].red,
+		ESP_LOGD(kTag, "New frame data_ (first LED): R=%d G=%d B=%d", this->working_frame_.led_data[0][0].red,
 				 this->working_frame_.led_data[0][0].green, this->working_frame_.led_data[0][0].blue);
 	}
 
@@ -253,7 +253,7 @@ void LightEffectManager::effect_task(void *arg) {
 
 		manager->run();
 		if (log_counter % 500 == 0) {
-			ESP_LOGI(kTag, "Effect task running at speed %.2f with delay %d ms", current_speed, delay_ms);
+			ESP_LOGD(kTag, "Effect task running at speed %.2f with delay %d ms", current_speed, delay_ms);
 		}
 		log_counter++;
 		vTaskDelay(pdMS_TO_TICKS(delay_ms));

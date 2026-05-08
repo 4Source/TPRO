@@ -75,7 +75,7 @@ esp_err_t FileManager::mount() {
 		.use_one_fat = false,
 	};
 
-	ESP_LOGI(kTag, "Initializing SD card via SPI");
+	ESP_LOGD(kTag, "Initializing SD card via SPI");
 
 	sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 	host.slot = SPI3_HOST; // SPI3 nutzen 1&2 werden wohl von ethernet belegt
@@ -106,7 +106,7 @@ esp_err_t FileManager::mount() {
 		if (ret == ESP_OK || ret == ESP_ERR_INVALID_STATE) {
 			s_spi_bus_initialized = true;
 			ret = ESP_OK;
-			ESP_LOGI(kTag, "SPI bus is ready.");
+			ESP_LOGD(kTag, "SPI bus is ready.");
 		} else {
 			ESP_LOGE(kTag, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
 			return ret;
@@ -129,7 +129,7 @@ esp_err_t FileManager::mount() {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTag, "SDCard mounted at: %s", kMountPoint);
+	ESP_LOGD(kTag, "SDCard mounted at: %s", kMountPoint);
 	if (card == nullptr) {
 		ESP_LOGW(kTag, "SD Card is not mounted.");
 		return ESP_FAIL;
@@ -143,7 +143,7 @@ esp_err_t FileManager::unmount() {
 		return ESP_FAIL;
 	}
 	esp_vfs_fat_sdcard_unmount(kMountPoint, card);
-	ESP_LOGI(kTag, "Card unmounted");
+	ESP_LOGD(kTag, "Card unmounted");
 	spi_bus_free(host_slot);
 	card = nullptr;
 	return ESP_OK;
@@ -157,7 +157,7 @@ esp_err_t FileManager::save_file(const std::string &filename, const std::string 
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTag, "Saving file: %s", path.c_str());
+	ESP_LOGD(kTag, "Saving file: %s", path.c_str());
 
 	std::ofstream file(path);
 	if (!file.is_open()) {
@@ -173,7 +173,7 @@ esp_err_t FileManager::save_file(const std::string &filename, const std::string 
 
 esp_err_t FileManager::append_file(const std::string &filename, const std::string &content) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTag, "Appending file: %s", path.c_str());
+	ESP_LOGD(kTag, "Appending file: %s", path.c_str());
 
 	std::ofstream file(path, std::ios::out | std::ios::app);
 	if (!file.is_open()) {
@@ -189,7 +189,7 @@ esp_err_t FileManager::append_file(const std::string &filename, const std::strin
 
 std::optional<std::string> FileManager::read_file(const std::string &filename) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTag, "Reading file: %s", path.c_str());
+	ESP_LOGD(kTag, "Reading file: %s", path.c_str());
 
 	std::ifstream file(path);
 	if (!file.is_open()) {
@@ -206,7 +206,7 @@ std::optional<std::string> FileManager::read_file(const std::string &filename) {
 
 esp_err_t FileManager::delete_file(const std::string &filename) {
 	std::string path = resolve_path(filename);
-	ESP_LOGI(kTag, "Deleting file: %s", path.c_str());
+	ESP_LOGD(kTag, "Deleting file: %s", path.c_str());
 
 	int result = unlink(path.c_str());
 	if (result != 0) {
@@ -218,7 +218,7 @@ esp_err_t FileManager::delete_file(const std::string &filename) {
 
 std::vector<std::string> FileManager::list_directory(const std::string &directory_path) {
 	std::string path = resolve_path(directory_path);
-	ESP_LOGI(kTag, "Listing directory: %s", path.c_str());
+	ESP_LOGD(kTag, "Listing directory: %s", path.c_str());
 
 	std::vector<std::string> files;
 	DIR *dir = opendir(path.c_str());
@@ -252,7 +252,7 @@ esp_err_t FileManager::is_file(const std::string &file_path) {
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	ESP_LOGI(kTag, "Check is file: %s", path.c_str());
+	ESP_LOGD(kTag, "Check is file: %s", path.c_str());
 
 	struct stat status;
 
@@ -274,7 +274,7 @@ esp_err_t FileManager::is_directory(const std::string &directory_path) {
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	ESP_LOGI(kTag, "Check is directory: %s", path.c_str());
+	ESP_LOGD(kTag, "Check is directory: %s", path.c_str());
 
 	struct stat status;
 
@@ -290,7 +290,7 @@ esp_err_t FileManager::is_directory(const std::string &directory_path) {
 }
 // Ziehe einen ranmdom Effekt aus dem Verzeichnis /effects
 std::optional<std::string> FileManager::get_random_effect_path() {
-	ESP_LOGI(kTag, "Searching for random effect in directory: %s", "/effects/defaults");
+	ESP_LOGD(kTag, "Searching for random effect in directory: %s", "/effects/defaults");
 
 	std::vector<std::string> all_files = list_directory("/effects/defaults");
 	std::vector<std::string> json_files;
@@ -316,13 +316,13 @@ std::optional<std::string> FileManager::get_random_effect_path() {
 	}
 
 	std::string full_path = base_dir + selected_file;
-	ESP_LOGI(kTag, "Random effect selected: %s", full_path.c_str());
+	ESP_LOGD(kTag, "Random effect selected: %s", full_path.c_str());
 
 	return full_path;
 }
 
 esp_err_t FileManager::run_selftest() {
-	ESP_LOGI(kTag, "--- Starting FileManager Selftest ---");
+	ESP_LOGD(kTag, "--- Starting FileManager Selftest ---");
 	if (mount() != ESP_OK) {
 		ESP_LOGE(kTag, "Selftest failed: Could not mount SD card.");
 		return ESP_FAIL;
@@ -381,7 +381,7 @@ esp_err_t FileManager::run_selftest() {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTag, "--- FileManager Selftest Passed ---");
+	ESP_LOGD(kTag, "--- FileManager Selftest Passed ---");
 	return ESP_OK;
 }
 
@@ -391,6 +391,7 @@ FILE *FileManager::open_file(const std::string &filename, const char *mode) {
 	std::string path = resolve_path(filename);
 	FILE *file = fopen(path.c_str(), mode);
 	if (file == nullptr) {
+		vTaskDelay(pdMS_TO_TICKS(100));
 		ESP_LOGE(kTag, "Failed to open file stream: %s", path.c_str());
 	}
 	return file;
@@ -417,7 +418,7 @@ esp_err_t FileManager::write_buffer(const std::string &filename, const uint8_t *
 		return ESP_FAIL;
 	}
 
-	FILE * file = fopen(path.c_str(), append ? "ab" : "wb");
+	FILE *file = fopen(path.c_str(), append ? "ab" : "wb");
 	if (file == nullptr) {
 		return ESP_FAIL;
 	}
@@ -430,7 +431,7 @@ esp_err_t FileManager::write_buffer(const std::string &filename, const uint8_t *
 
 esp_err_t FileManager::read_buffer_chunk(const std::string &filename, uint8_t *out_dest, size_t offset, size_t len, size_t *bytes_read) {
 	std::string path = resolve_path(filename);
-	FILE * file = fopen(path.c_str(), "rb");
+	FILE *file = fopen(path.c_str(), "rb");
 	if (file == nullptr) {
 		return ESP_FAIL;
 	}

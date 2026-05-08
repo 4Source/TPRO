@@ -253,13 +253,13 @@ esp_err_t LedController::run() {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(kTag, "LedController task successfully created");
+	ESP_LOGD(kTag, "LedController task successfully created");
 
 	return ESP_OK;
 }
 
 esp_err_t LedController::stop() {
-	ESP_LOGI(kTag, "Stopping LedController...");
+	ESP_LOGD(kTag, "Stopping LedController...");
 
 	// Deinitialize LED channels
 	if (led_ch1 != nullptr) {

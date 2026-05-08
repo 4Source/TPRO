@@ -4,7 +4,15 @@
 #include <cstdio>
 #include <print>
 
-LedFrame::LedFrame() : led_data{}, m_resource_mutex{xSemaphoreCreateMutex()}, m_reader_mutex{xSemaphoreCreateMutex()} {}
+// NOLINTBEGIN[cppcoreguidelines-prefer-member-initializer]
+LedFrame::LedFrame() : led_data{} {
+	m_resource_mutex = xSemaphoreCreateBinary();
+	xSemaphoreGive(m_resource_mutex); // Initialize as "available"
+
+	m_reader_mutex = xSemaphoreCreateBinary();
+	xSemaphoreGive(m_reader_mutex); // Initialize as "available"
+}
+// NOLINTEND[cppcoreguidelines-prefer-member-initializer]
 
 LedFrame::~LedFrame() {
 	if (m_resource_mutex != nullptr) {

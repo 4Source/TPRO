@@ -64,7 +64,7 @@ class FileManager {
 	 */
 	template <size_t N> static esp_err_t read_file_chunked(const std::string &filename, const std::function<esp_err_t(const char *, int)> &on_chunk) {
 		std::string path = resolve_path(filename);
-		ESP_LOGI(kTag, "Reading chunked file: %s", path.c_str());
+		ESP_LOGD(kTag, "Reading chunked file: %s", path.c_str());
 
 		std::ifstream file(path);
 		if (!file.is_open()) {
