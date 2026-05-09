@@ -16,14 +16,14 @@ class ConfigManager {
 	std::unordered_map<std::string, std::vector<ConfigObserver *>> observer_list;
 
 	// All possible Keys are listed in this array,
-	static constexpr std::array<std::string, 4> kEys{"current_effect", "effects_path", "speed", "brightness"};
+	static constexpr std::array<std::string, 6> kEys{"current_effect", "effects_path", "active_from", "active_to"};
 
 	// necessary for switch case
-	enum KEY : std::uint8_t { CURRENT_EFFECT, EFFECTS_PATH, SPEED, BRIGHTNESS };
+	enum KEY : std::uint8_t { CURRENT_EFFECT, EFFECTS_PATH, ACTIVE_FROM, ACTIVE_TO };
 	// Map string keys to enum values for switch case
 
-	std::unordered_map<std::string, KEY> stringToEnum = {
-		{"current_effect", CURRENT_EFFECT}, {"effects_path", EFFECTS_PATH}, {"speed", SPEED}, {"brightness", BRIGHTNESS}};
+	static inline const std::unordered_map<std::string, KEY> stringToEnum = {
+		{"current_effect", CURRENT_EFFECT}, {"effects_path", EFFECTS_PATH}, {"active_from", ACTIVE_FROM}, {"active_to", ACTIVE_TO}};
 
 	static constexpr const char *kTag = "config-manager";
 
@@ -44,7 +44,7 @@ class ConfigManager {
 	 *
 	 * @param keys The keys that changed
 	 */
-	void notify_observers(std::vector<std::string> &keys);
+	void notify_observers(const std::vector<std::string> &keys);
 
 	/**
 	 * Notify all registered observers about the changes to the key
@@ -90,11 +90,11 @@ class ConfigManager {
 		case EFFECTS_PATH:
 			result = config.effects_path.string();
 			break;
-		case SPEED:
-			result = std::to_string(config.speed);
+		case ACTIVE_FROM:
+			result = config.active_from;
 			break;
-		case BRIGHTNESS:
-			result = std::to_string(config.brightness);
+		case ACTIVE_TO:
+			result = config.active_to;
 			break;
 		default:
 			break;

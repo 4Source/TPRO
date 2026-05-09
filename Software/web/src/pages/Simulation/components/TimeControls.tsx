@@ -8,16 +8,12 @@ type Props = {
 	isPlaying: boolean;
 	speed: string;
 
-	// eslint-disable-next-line no-unused-vars
 	onDateChange: (_value: string) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onTimeChange: (_value: number) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onPlayingChange: (_value: boolean) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onSpeedChange: (_value: string) => void;
 };
 

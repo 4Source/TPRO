@@ -151,6 +151,7 @@ esp_err_t ContinentEffect::get_led_data(LedFrame &frame, DateTime::TimeComponent
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	// 1. Ganze Karte mit Ozean füllen (schnell)
 	for (auto &led_row : frame.led_data) {

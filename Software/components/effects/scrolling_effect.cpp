@@ -194,18 +194,26 @@ std::string ScrollingEffect::get_name() { return this->name_; }
 // -----------------
 esp_err_t ScrollingEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "text"); cJSON_IsString(item)) {
 		text_.value = item->valuestring;
-		if (label_ != nullptr) { lv_label_set_text(label_, text_.value.c_str()); }
+		if (label_ != nullptr) {
+			lv_label_set_text(label_, text_.value.c_str());
+		}
 	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "scroll_speed"); cJSON_IsNumber(item))

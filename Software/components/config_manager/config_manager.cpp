@@ -17,51 +17,43 @@ ConfigManager::ConfigManager() {
 
 void ConfigManager::notify_observers() {
 	if (observer_list.empty()) {
-		// exit early because no entries
 		return;
 	}
 
-	std::vector<std::string> keys;
-	keys.reserve(observer_list.size());
-
-	// Collect all keys at least one observer has registered to
-	for (const auto &entry : observer_list) {
-		keys.push_back(entry.first);
+	for (const auto &[key, observers] : observer_list) {
+		for (ConfigObserver *observer : observers) {
+			observer->update(key);
+		}
 	}
-
-	notify_observers(keys);
 }
 
-void ConfigManager::notify_observers(std::vector<std::string> &keys) {
-	std::map<ConfigObserver *, std::vector<std::string>> observer_keys;
-
+void ConfigManager::notify_observers(const std::vector<std::string> &keys) {
 	for (const std::string &key : keys) {
-		// Check if observer list contains the key
-		if (!observer_list.contains(key)) {
+
+		auto it = observer_list.find(key);
+		if (it == observer_list.end()) {
 			continue;
 		}
 
-		// The current key to all observers that are registered for it
-		std::vector<ConfigObserver *> key_observers = observer_list.find(key)->second;
-		for (ConfigObserver *observer : key_observers) {
-			observer_keys[observer].push_back(key);
-		}
-	}
+		// No copy
+		const auto &key_observers = it->second;
 
-	// notify all observers about there keys that changed
-	for (const auto &[observer, keys] : observer_keys) {
-		observer->update(keys);
+		for (ConfigObserver *observer : key_observers) {
+			observer->update(key);
+		}
 	}
 }
 
 void ConfigManager::notify_observers(const std::string &key) {
-	// Check if observer list contains the key
-	if (!observer_list.contains(key)) {
+
+	auto it = observer_list.find(key);
+	if (it == observer_list.end()) {
 		return;
 	}
 
-	// Notify all observers which are registered for the key
-	std::vector<ConfigObserver *> key_observers = observer_list.find(key)->second;
+	// No copy
+	const auto &key_observers = it->second;
+
 	for (ConfigObserver *observer : key_observers) {
 		observer->update(key);
 	}
@@ -113,40 +105,24 @@ esp_err_t ConfigManager::set_config(const std::string &key, const std::string &v
 		ESP_LOGE(kTag, "Tried to access Unknown key");
 		return ESP_FAIL;
 	}
+	ESP_LOGD(kTag, "set_config %s=%s", key.c_str(), value.c_str());
 	KEY enum_key = stringToEnum.at(key);
 	switch (enum_key) {
-	case CURRENT_EFFECT: {
+	case CURRENT_EFFECT:
 		config.current_effect = std::filesystem::path(value);
 		break;
-	}
-	case EFFECTS_PATH: {
+	case EFFECTS_PATH:
 		config.effects_path = std::filesystem::path(value);
 		break;
-	}
-	case SPEED: {
-		// check if value is a number
-		if (std::ranges::all_of(value, ::isdigit)) {
-			config.speed = std::stoi(value);
-		} else {
-			ESP_LOGW(kTag, "Invalid value");
-			return ESP_FAIL;
-		}
+	case ACTIVE_FROM:
+		config.active_from = value;
 		break;
-	}
-	case BRIGHTNESS: {
-		// check if value is a number
-		if (std::ranges::all_of(value, ::isdigit)) {
-			config.brightness = std::stoi(value);
-		} else {
-			ESP_LOGW(kTag, "Invalid value");
-			return ESP_FAIL;
-		}
+	case ACTIVE_TO:
+		config.active_to = value;
 		break;
-	}
-	default: {
+	default:
 		ESP_LOGE(kTag, "Tried to access Unknown key");
 		return ESP_FAIL;
-	}
 	}
 
 	notify_observers(key); // update observers
@@ -168,28 +144,24 @@ esp_err_t ConfigManager::set_to_default(const std::string &key) {
 		ESP_LOGE(kTag, "Tried to access Unknown key");
 		return ESP_FAIL;
 	}
+	ConfigType default_config{};
 	KEY enum_key = stringToEnum.at(key);
 	switch (enum_key) {
-	case CURRENT_EFFECT: {
-		config.current_effect = std::filesystem::path("");
+	case CURRENT_EFFECT:
+		config.current_effect = default_config.current_effect;
 		break;
-	}
-	case EFFECTS_PATH: {
-		config.effects_path = std::filesystem::path("");
+	case EFFECTS_PATH:
+		config.effects_path = default_config.effects_path;
 		break;
-	}
-	case SPEED: {
-		config.speed = 0;
+	case ACTIVE_FROM:
+		config.active_from = default_config.active_from;
 		break;
-	}
-	case BRIGHTNESS: {
-		config.brightness = 0;
+	case ACTIVE_TO:
+		config.active_to = default_config.active_to;
 		break;
-	}
-	default: {
+	default:
 		ESP_LOGE(kTag, "Tried to access Unknown key");
 		return ESP_FAIL;
-	}
 	}
 	notify_observers();
 	// Always serialize on delete
@@ -210,8 +182,8 @@ esp_err_t ConfigManager::serialize() const {
 
 	cJSON_AddStringToObject(root.get(), "current_effect", config.current_effect.string().c_str());
 	cJSON_AddStringToObject(root.get(), "effects_path", config.effects_path.string().c_str());
-	cJSON_AddNumberToObject(root.get(), "speed", config.speed);
-	cJSON_AddNumberToObject(root.get(), "brightness", config.brightness);
+	cJSON_AddStringToObject(root.get(), "active_from", config.active_from.c_str());
+	cJSON_AddStringToObject(root.get(), "active_to", config.active_to.c_str());
 
 	std::unique_ptr<char, decltype(&free)> json_string(cJSON_PrintUnformatted(root.get()), free);
 	if (json_string == nullptr) {
@@ -223,6 +195,7 @@ esp_err_t ConfigManager::serialize() const {
 
 esp_err_t ConfigManager::deserialize() {
 	auto opt_json = FileManager::read_file(kPath);
+	esp_err_t err = ESP_OK;
 
 	if (!opt_json) {
 		// Read failed
@@ -238,23 +211,31 @@ esp_err_t ConfigManager::deserialize() {
 	cJSON *item = cJSON_GetObjectItem(root.get(), "current_effect");
 	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
 		config.current_effect = std::filesystem::path(item->valuestring);
+	} else {
+		err = ESP_FAIL;
 	}
 
 	item = cJSON_GetObjectItem(root.get(), "effects_path");
 	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
 		config.effects_path = std::filesystem::path(item->valuestring);
+	} else {
+		err = ESP_FAIL;
 	}
 
-	item = cJSON_GetObjectItem(root.get(), "speed");
-	if (cJSON_IsNumber(item) != 0) {
-		config.speed = item->valueint;
+	item = cJSON_GetObjectItem(root.get(), "active_from");
+	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
+		config.active_from = std::string(item->valuestring);
+	} else {
+		err = ESP_FAIL;
 	}
 
-	item = cJSON_GetObjectItem(root.get(), "brightness");
-	if (cJSON_IsNumber(item) != 0) {
-		config.brightness = item->valueint;
+	item = cJSON_GetObjectItem(root.get(), "active_to");
+	if (cJSON_IsString(item) != 0 && (item->valuestring != nullptr)) {
+		config.active_to = std::string(item->valuestring);
+	} else {
+		err = ESP_FAIL;
 	}
 
 	notify_observers();
-	return ESP_OK;
+	return err;
 }

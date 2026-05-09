@@ -6,7 +6,6 @@ type Props = {
 	inputValue: string;
 	result: LedData | null;
 
-	// eslint-disable-next-line no-unused-vars
 	onInputChange: (_value: string) => void;
 	onSearch: () => void;
 };

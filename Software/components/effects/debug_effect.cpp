@@ -6,6 +6,7 @@ esp_err_t DebugEffect::get_led_data(LedFrame &frame, DateTime::TimeComponents ti
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	for (uint32_t frame_row = 0; frame_row < frame.led_data.size(); ++frame_row) {
 		auto &led_row = frame.led_data.at(frame_row);
@@ -52,7 +53,9 @@ esp_err_t DebugEffect::deserialize(std::string path) {
 	this->path = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
 		this->name = item->valuestring;

@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <cstdio>
 #include <print>
+#include <ranges>
 
 // NOLINTBEGIN[cppcoreguidelines-prefer-member-initializer]
 LedFrame::LedFrame() : led_data{} {
@@ -69,4 +70,9 @@ void LedFrame::unlock_read() {
 		xSemaphoreGive(m_resource_mutex);
 	}
 	xSemaphoreGive(m_reader_mutex);
+}
+
+void LedFrame::clear_led_data() {
+	// Zero out the frame at the beginning
+	std::ranges::fill(this->led_data | std::views::join, RGB{.red = 0, .green = 0, .blue = 0});
 }

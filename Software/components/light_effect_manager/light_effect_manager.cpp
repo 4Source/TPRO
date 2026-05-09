@@ -1,11 +1,14 @@
 #include "light_effect_manager.hpp"
 #include "config_manager.hpp"
 #include "datetime.hpp"
+#include "led_frame.hpp"
 #include "task_handles.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <esp_err.h>
 #include <freertos/task.h>
+#include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static uint16_t log_counter = 0;
@@ -133,15 +136,83 @@ std::shared_ptr<Effect> LightEffectManager::get_effect(const std::string &path) 
 // Update-Logik
 // ============================================================
 
+bool parse_time(const std::string &time_string, uint8_t &hour, uint8_t &minute) {
+	// Expected format: "HH:MM"
+	if (time_string.size() != 5) {
+		return false;
+	}
+	if (time_string[2] != ':') {
+		return false;
+	}
+
+	if (time_string[0] < '0' || time_string[0] > '9') {
+		return false;
+	}
+	if (time_string[1] < '0' || time_string[1] > '9') {
+		return false;
+	}
+	if (time_string[3] < '0' || time_string[3] > '9') {
+		return false;
+	}
+	if (time_string[4] < '0' || time_string[4] > '9') {
+		return false;
+	}
+
+	uint8_t temp_hour = ((time_string[0] - '0') * 10) + (time_string[1] - '0');
+	uint8_t temp_minute = ((time_string[3] - '0') * 10) + (time_string[4] - '0');
+
+	if (temp_hour > 23 || temp_minute > 59) {
+		return false;
+	}
+
+	hour = temp_hour;
+	minute = temp_minute;
+	return true;
+}
+
+bool LightEffectManager::isDurringWorkingHours(const DateTime::TimeComponents &time_stamp) {
+	uint8_t time_from_hour = 0;
+	uint8_t time_from_minute = 0;
+	if (!parse_time(config_manager_->get_config("active_from"), time_from_hour, time_from_minute)) {
+		ESP_LOGE(kTag, "Failed to parse 'active_from' to hours and minuets");
+		return false;
+	}
+
+	uint8_t time_to_hour = 0;
+	uint8_t time_to_minute = 0;
+	if (!parse_time(config_manager_->get_config("active_to"), time_to_hour, time_to_minute)) {
+		ESP_LOGE(kTag, "Failed to parse 'active_to' to hours and minuets");
+		return false;
+	}
+
+	int from_total = (time_from_hour * 60) + time_from_minute;
+	int to_total = (time_to_hour * 60) + time_to_minute;
+	int current_total = (time_stamp.hour * 60) + time_stamp.minute;
+
+	return from_total <= current_total && current_total <= to_total;
+}
+
 esp_err_t LightEffectManager::run() {
 	auto time_stamp = DateTime::get_now();
 
-	if (current_effect_ == nullptr) {
+	if (current_effect_ == nullptr && log_counter % 500 == 0) {
 		ESP_LOGW(kTag, "current_effect is NULL!");
 		return ESP_ERR_INVALID_STATE;
 	}
 
-	esp_err_t err = current_effect_->get_led_data(this->working_frame_, time_stamp);
+	esp_err_t err = ESP_FAIL;
+	if (isDurringWorkingHours(time_stamp)) {
+		// Durring working hours get the frame from the effect
+		err = current_effect_->get_led_data(this->working_frame_, time_stamp);
+	} else {
+		// Durring NONE working hours get frame with all off
+		for (auto &led_row : this->working_frame_.led_data) {
+			for (auto &led_pos : led_row) {
+				led_pos = RGB{.red = 0, .green = 0, .blue = 0};
+			}
+		}
+		err = ESP_OK;
+	}
 
 	if (err != ESP_OK) {
 		ESP_LOGW(kTag, "Effect returned error code %d for timestamp %u-%02u-%02u %02u:%02u:%02u", err, time_stamp.year, time_stamp.month,
@@ -191,13 +262,17 @@ esp_err_t LightEffectManager::run() {
 
 void LightEffectManager::set_config_manager(ConfigManager *manager) {
 	if (config_manager_ != nullptr) {
-		config_manager_->remove_observer("current_effect", *this);
+		if (config_manager_->remove_observer("current_effect", *this) != ESP_OK) {
+			ESP_LOGE(kTag, "Failed to remove observer in old config manager");
+		}
 	}
 
 	config_manager_ = manager;
 
 	if (config_manager_ != nullptr) {
-		config_manager_->add_observer("current_effect", *this);
+		if (config_manager_->add_observer("current_effect", *this) != ESP_OK) {
+			ESP_LOGE(kTag, "Failed to add observer in new config manager");
+		}
 	}
 }
 
@@ -213,7 +288,7 @@ void LightEffectManager::update(const std::string &key) {
 		auto effect = get_effect(path);
 		if (effect) {
 			current_effect_ = effect;
-			ESP_LOGI(kTag, "Effect switched to: %s", effect->get_name().c_str());
+			ESP_LOGI(kTag, "Effect switched to: %s", current_effect_->get_name().c_str());
 		} else {
 			ESP_LOGE(kTag, "get_effect returned nullptr for path: %s", path.c_str());
 		}

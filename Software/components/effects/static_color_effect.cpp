@@ -6,6 +6,7 @@ esp_err_t StaticColorEffect::get_led_data(LedFrame &frame, DateTime::TimeCompone
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	for (auto &led_row : frame.led_data) {
 		for (auto &led_cell : led_row) {
@@ -45,7 +46,9 @@ esp_err_t StaticColorEffect::deserialize(std::string path) {
 	this->path = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
 		this->name = item->valuestring;
@@ -54,12 +57,14 @@ esp_err_t StaticColorEffect::deserialize(std::string path) {
 		this->version = item->valuestring;
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		this->color.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		this->color.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		this->color.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		this->color.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		this->color.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))

@@ -5,6 +5,7 @@ esp_err_t EqualizerEffect::get_led_data(LedFrame &frame, DateTime::TimeComponent
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 	(void)time_stamp;
 
 	if (heights_.empty()) {
@@ -103,14 +104,20 @@ esp_err_t EqualizerEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t EqualizerEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "decay"); cJSON_IsNumber(item))
 		decay_.value = static_cast<uint8_t>(item->valuedouble);

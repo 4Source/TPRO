@@ -13,7 +13,6 @@ type Props = {
 	clickToCoordinatesMode: boolean;
 	tps: ThinPlateSpline | null;
 
-	// eslint-disable-next-line no-unused-vars
 	onCoordinateClick: (_coords: Coordinates) => void;
 };
 
@@ -51,8 +50,8 @@ export function MatrixViewer({ ledColors, showMap, mapOpacity, dotsOpacity, dotS
 				)}
 				<div
 					class={`matrix-grid ${clickToCoordinatesMode ? 'cursor-crosshair' : 'cursor-default'}`}
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				style={{ '--dot-fill': String(dotSize / 100) } as any}
+
+					style={{ '--dot-fill': String(dotSize / 100) } as any}
 					onClick={handleMatrixClick}
 				>
 					{ledColors.map((color, index) => (

@@ -22,12 +22,12 @@ export type LedContinentMapping = {
 };
 
 export enum Continents {
-	"North" = "North",
-	"South" = "South",
-	"Europe" = "Europe",
-	"Africa" = "Africa",
-	"Asia" = "Asia",
-	"Australia" = "Australia",
+	'North' = 'North',
+	'South' = 'South',
+	'Europe' = 'Europe',
+	'Africa' = 'Africa',
+	'Asia' = 'Asia',
+	'Australia' = 'Australia',
 }
 
 export type ContinentData = Record<Continents, number>;

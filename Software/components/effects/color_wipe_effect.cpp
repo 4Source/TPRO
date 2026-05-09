@@ -5,6 +5,7 @@ esp_err_t ColorWipeEffect::get_led_data(LedFrame &frame, DateTime::TimeComponent
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 	const uint64_t ms_time = ((time_stamp.second * 1000) + time_stamp.millisecond);
 
 	const size_t max_leds = frame.led_data.size() * frame.led_data[0].size();
@@ -123,14 +124,20 @@ esp_err_t ColorWipeEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t ColorWipeEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
 		speed_.value = static_cast<uint8_t>(item->valuedouble);
@@ -145,15 +152,15 @@ esp_err_t ColorWipeEffect::deserialize(std::string path) {
 		led_end_.value = static_cast<uint32_t>(item->valuedouble);
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color_a"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		col_a_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_a_.value.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		col_a_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		col_a_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		col_a_.value.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color_b"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		col_b_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_b_.value.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		col_b_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		col_b_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		col_b_.value.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	return ESP_OK;

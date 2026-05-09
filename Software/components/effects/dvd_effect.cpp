@@ -4,6 +4,7 @@ esp_err_t DVDEffect::get_led_data(LedFrame &frame, DateTime::TimeComponents time
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 	(void)time_stamp;
 
 	pos_x_.value += vel_x_.value;
@@ -109,14 +110,20 @@ esp_err_t DVDEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t DVDEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "speed"); cJSON_IsNumber(item))
 		speed_.value = static_cast<uint8_t>(item->valuedouble);
@@ -134,9 +141,9 @@ esp_err_t DVDEffect::deserialize(std::string path) {
 		pos_y_.value = static_cast<uint32_t>(item->valuedouble);
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		col_rgb_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		col_rgb_.value.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		col_rgb_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		col_rgb_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		col_rgb_.value.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	return ESP_OK;

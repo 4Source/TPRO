@@ -6,7 +6,7 @@ function displayLabel(type: string): string {
 
 type Props = {
 	effectsPath: string;
-	// eslint-disable-next-line no-unused-vars
+
 	onEffectChanged: (_path: string) => void;
 };
 
@@ -26,9 +26,9 @@ export function QuickEffectPanel({ effectsPath, onEffectChanged }: Props) {
 		const dirPart = effectsPath.replace(/^\//, '');
 		Promise.all([
 			fetch(`/directory/${dirPart}/defaults`)
-				.then(r => r.ok ? r.json() as Promise<string[]> : Promise.resolve([])),
+				.then(r => (r.ok ? r.json() as Promise<string[]> : Promise.resolve([]))),
 			fetch(`/directory/${dirPart}`)
-				.then(r => r.ok ? r.json() as Promise<string[]> : Promise.resolve([])),
+				.then(r => (r.ok ? r.json() as Promise<string[]> : Promise.resolve([]))),
 		]).then(([defaultFiles, customFiles]) => {
 			const defaults = (defaultFiles as string[])
 				.filter(f => f.endsWith('.json'))

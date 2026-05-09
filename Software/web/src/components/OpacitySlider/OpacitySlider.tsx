@@ -4,7 +4,6 @@ type Props = {
 	accent?: 'blue' | 'purple';
 	disabled?: boolean;
 
-	// eslint-disable-next-line no-unused-vars
 	onChange: (_value: number) => void;
 };
 

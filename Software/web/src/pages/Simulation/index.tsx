@@ -39,8 +39,8 @@ export function Simulation() {
 
 	useEffect(() => {
 		Promise.all([
-			fetch('/config?effects_path').then(r => r.ok ? r.text() : '/effects').catch(() => '/effects'),
-			fetch('/config?current_effect').then(r => r.ok ? r.text() : '').catch(() => ''),
+			fetch('/config?effects_path').then(r => (r.ok ? r.text() : '/effects')).catch(() => '/effects'),
+			fetch('/config?current_effect').then(r => (r.ok ? r.text() : '')).catch(() => ''),
 		]).then(([ePath, activePath]) => {
 			const clean = (s: string) => { const v = s.trim().replace(/^"|"$/g, ''); return v.startsWith('<') ? '' : v; };
 			setEffectsPath(clean(ePath) || '/effects');
@@ -145,9 +145,9 @@ export function Simulation() {
 						{(() => {
 							if (!activeEffectPath) return 'Aktueller Effekt: Keiner';
 							const t = activeEffectPath.split('/').pop()?.replace('.json', '') ?? '';
-							const label = t.startsWith('my_timeline_') ? t.slice('my_timeline_'.length)
-								: t.startsWith('my_') ? t.slice('my_'.length)
-								: t;
+							const label = t.startsWith('my_timeline_') ? t.slice('my_timeline_'.length) :
+								t.startsWith('my_') ? t.slice('my_'.length) :
+									t;
 							return `Aktueller Effekt: ${label}`;
 						})()}
 					</span>

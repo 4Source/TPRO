@@ -1,23 +1,23 @@
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import preact from '@preact/preset-vite';
-import type { Plugin } from 'vite';
 
 // Dev-only plugin: intercepts effect writes/deletes and stores them in memory.
 // Augments GET /directory/* and GET /file/* responses so saved effects appear
 // in the UI without needing the real ESP backend.
 function devMockWriteHandler(): Plugin {
-	const store = new Map<string, string>(); // "/effects/my_x.json" → JSON body
+	// "/effects/my_x.json" → JSON body
+	const store = new Map<string, string>();
 
 	return {
 		name: 'dev-mock-write-handler',
 		configureServer(server) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			server.middlewares.use((req: any, res: any, next: () => void) => {
 				const url: string = req.url ?? '';
 
 				// PUT /effect/<path> → store body in memory
 				if (req.method === 'PUT' && url.startsWith('/effect/')) {
-					const filePath = url.slice('/effect'.length); // e.g. /effects/my_x.json
+					// e.g. /effects/my_x.json
+					const filePath = url.slice('/effect'.length);
 					let body = '';
 					req.on('data', (chunk: unknown) => { body += String(chunk); });
 					req.on('end', () => {
@@ -54,18 +54,19 @@ function devMockWriteHandler(): Plugin {
 				// GET /directory/<dir> → merge proxy list with in-memory filenames
 				if (req.method === 'GET' && url.startsWith('/directory/')) {
 					// FileBrowser appends trailing slashes — strip them for consistent key lookup
-					const dirPath = ('/' + url.slice('/directory/'.length)).replace(/\/$/, '') || '/';
+					const dirPath = (`/${url.slice('/directory/'.length)}`).replace(/\/$/, '') || '/';
 					const inMem = Array.from(store.keys())
 						.filter(p => {
-							if (!p.startsWith(dirPath + '/')) return false;
-							return !p.slice(dirPath.length + 1).includes('/'); // direct children only
+							if (!p.startsWith(`${dirPath}/`)) return false;
+
+							// direct children only
+							return !p.slice(dirPath.length + 1).includes('/');
 						})
 						.map(p => p.split('/').pop() as string);
 
 					if (inMem.length > 0) {
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						(globalThis as any).fetch(`http://127.0.0.1:8000${url}`)
-							.then((r: Response) => r.ok ? r.json() : [])
+							.then((r: Response) => (r.ok ? r.json() : []))
 							.then((base: unknown) => {
 								const list = Array.isArray(base) ? (base as string[]) : [];
 								const merged = [...new Set([...list, ...inMem])];
