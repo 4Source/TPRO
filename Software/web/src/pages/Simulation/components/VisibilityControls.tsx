@@ -7,10 +7,8 @@ type Props = {
 	dotsOpacity: number;
 	onToggleMap: () => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onMapOpacityChange: (_value: number) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onDotsOpacityChange: (_value: number) => void;
 };
 

@@ -6,6 +6,7 @@ esp_err_t RowScanEffect::get_led_data(LedFrame &frame, DateTime::TimeComponents 
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	for (uint32_t frame_row = 0; frame_row < frame.led_data.size(); ++frame_row) {
 		auto &led_row = frame.led_data.at(frame_row);
@@ -65,7 +66,9 @@ esp_err_t RowScanEffect::deserialize(std::string path) {
 	this->path = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
 		this->name = item->valuestring;
@@ -74,18 +77,20 @@ esp_err_t RowScanEffect::deserialize(std::string path) {
 		this->version = item->valuestring;
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color_on"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		this->color_on.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		this->color_on.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		this->color_on.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		this->color_on.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		this->color_on.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color_off"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		this->color_off.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		this->color_off.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		this->color_off.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		this->color_off.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		this->color_off.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))

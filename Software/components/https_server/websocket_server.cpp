@@ -10,6 +10,8 @@
 
 static constexpr const char *kTagWebSocketServer = "websocket_server";
 
+std::array<uint8_t, (3 * CONFIG_LED_COLUMNS) * (CONFIG_LED_CH1_ROWS + CONFIG_LED_CH2_ROWS + CONFIG_LED_CH3_ROWS)> WebsocketServer::snapshot{};
+
 WebsocketServer::WebsocketServer(httpd_handle_t server, LedFrame &frame) : m_server(server), r_frame(frame) {}
 
 esp_err_t WebsocketServer::run() {
@@ -47,15 +49,13 @@ esp_err_t WebsocketServer::update_simulation() {
 	}
 
 	// Snapshot der LED-Daten
-	std::vector<uint8_t> snapshot;
 	{
 		LedFrame::ScopedReadLock lock(r_frame);
 
 		// NOLINTNEXTLINE[cppcoreguidelines-pro-type-reinterpret-cast]
-		const auto *data_ptr = reinterpret_cast<const uint8_t *>(r_frame.led_data[0].data());
-		size_t data_size = sizeof(r_frame.led_data);
-		// NOLINTNEXTLINE[cppcoreguidelines-pro-bounds-pointer-arithmetic]
-		snapshot.assign(data_ptr, data_ptr + data_size);
+		const auto *data_ptr = reinterpret_cast<const uint8_t *>(r_frame.led_data.data());
+		constexpr size_t data_size = sizeof(r_frame.led_data);
+		std::memcpy(snapshot.data(), data_ptr, data_size);
 	}
 
 	for (size_t i = 0; i < max_clients; ++i) {

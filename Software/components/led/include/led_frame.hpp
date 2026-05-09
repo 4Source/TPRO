@@ -114,6 +114,7 @@ class LedFrame {
 	};
 
 	void print_led_data_csv_table();
+	void clear_led_data();
 
   private:
 	static constexpr const char *kTag = "led-frame";

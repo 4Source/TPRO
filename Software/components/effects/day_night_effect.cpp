@@ -96,6 +96,7 @@ esp_err_t DayNightEffect::get_led_data(LedFrame &frame, DateTime::TimeComponents
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	// Prüfe alle 1000 Aufrufe ob Tageswechsel
 	if (call_counter_++ >= 1000 || last_loaded_day_ == -1) {

@@ -30,7 +30,9 @@ type EffectEntry = {
 	type: string;
 	path: string;
 	isDefault: boolean;
-	effectJsonType: string; // actual "type" field from the JSON file
+
+	// actual "type" field from the JSON file
+	effectJsonType: string;
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -41,7 +43,7 @@ function hexToRgb(hex: string): number[] {
 }
 
 function rgbToHex(rgb: number[]): string {
-	return '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+	return `#${rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`;
 }
 
 function deepCopy<T>(obj: T): T {
@@ -307,7 +309,8 @@ function SaveDialog({ onSave, onClose }: SaveDialogProps) {
 		try {
 			await onSave(trimmed);
 			onClose();
-		} catch (e) {
+		}
+		catch (e) {
 			setError(e instanceof Error ? e.message : 'Fehler beim Speichern');
 			setSaving(false);
 		}
@@ -326,7 +329,7 @@ function SaveDialog({ onSave, onClose }: SaveDialogProps) {
 						onInput={(e) => { setName((e.target as HTMLInputElement).value); setError(''); }}
 						onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose(); }}
 						class="save-dialog-input"
-						// eslint-disable-next-line jsx-a11y/no-autofocus
+
 						autoFocus
 					/>
 				</div>
@@ -353,7 +356,7 @@ function SaveDialog({ onSave, onClose }: SaveDialogProps) {
 // ── EffectPanel ──────────────────────────────────────────────────────────────
 
 type EffectPanelProps = {
-	// eslint-disable-next-line no-unused-vars
+
 	onEffectActivated?: (_path: string) => void;
 };
 
@@ -376,9 +379,9 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 		const dirPart = base.replace(/^\//, '');
 		return Promise.all([
 			fetch(`/directory/${dirPart}/defaults`)
-				.then(r => r.ok ? r.json() as Promise<string[]> : Promise.resolve([])),
+				.then(r => (r.ok ? r.json() as Promise<string[]> : Promise.resolve([]))),
 			fetch(`/directory/${dirPart}`)
-				.then(r => r.ok ? r.json() as Promise<string[]> : Promise.resolve([])),
+				.then(r => (r.ok ? r.json() as Promise<string[]> : Promise.resolve([]))),
 		]).then(([defaultFiles, customFiles]) => {
 			const defaults: EffectEntry[] = (defaultFiles as string[])
 				.filter(f => f.endsWith('.json'))
@@ -389,13 +392,13 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 				customFilenames.map(f => {
 					const path = `${base}/${f}`;
 					return fetch(`/file/${path.replace(/^\//, '')}`)
-						.then(r => r.ok ? r.json() as Promise<{ type?: string }> : Promise.resolve({}))
+						.then(r => (r.ok ? r.json() as Promise<{ type?: string }> : Promise.resolve({})))
 						.then((json: { type?: string }) => ({
 							filename: f, type: f.replace('.json', ''), path, isDefault: false,
 							effectJsonType: json.type ?? f.replace('.json', ''),
 						} as EffectEntry))
 						.catch(() => ({ filename: f, type: f.replace('.json', ''), path, isDefault: false, effectJsonType: f.replace('.json', '') } as EffectEntry));
-				})
+				}),
 			).then(custom => {
 				const list = [...defaults, ...custom];
 				setEntries(list);
@@ -406,8 +409,8 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 
 	useEffect(() => {
 		Promise.all([
-			fetch('/config?effects_path').then(r => r.ok ? r.text() : '/effects').catch(() => '/effects'),
-			fetch('/config?current_effect').then(r => r.ok ? r.text() : '').catch(() => ''),
+			fetch('/config?effects_path').then(r => (r.ok ? r.text() : '/effects')).catch(() => '/effects'),
+			fetch('/config?current_effect').then(r => (r.ok ? r.text() : '')).catch(() => ''),
 		]).then(([ePath, activePath]) => {
 			const base = safePathText(ePath, '/effects');
 			setEffectsPath(base);
@@ -431,7 +434,7 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 
 		const filePart = entry.path.replace(/^\//, '');
 		fetch(`/file/${filePart}`)
-			.then(r => r.ok ? r.json() as Promise<EffectJson> : Promise.resolve(null))
+			.then(r => (r.ok ? r.json() as Promise<EffectJson> : Promise.resolve(null)))
 			.then((json: EffectJson | null) => {
 				setLoadedJson(json);
 				setEditedJson(json ? deepCopy(json) : null);
@@ -456,7 +459,10 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 		if (!deleteCandidate) return;
 		const filePart = deleteCandidate.path.replace(/^\//, '');
 		const r = await fetch(`/file/${filePart}`, { method: 'DELETE' }).catch(() => null);
-		if (r && !r.ok) return; // Fehler still ignorieren — Liste trotzdem bereinigen
+		if (r && !r.ok) {
+			// Fehler still ignorieren — Liste trotzdem bereinigen
+			return;
+		}
 		setEntries(prev => prev.filter(e => e.path !== deleteCandidate.path));
 		if (selected?.path === deleteCandidate.path) {
 			setSelected(null);
@@ -483,7 +489,8 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 			onEffectActivated?.(selected.path);
 			setApplyStatus('success');
 			setTimeout(() => setApplyStatus('idle'), 2500);
-		} catch (e) {
+		}
+		catch (e) {
 			setApplyStatus('error');
 			setApplyError(e instanceof Error ? e.message : 'Fehler');
 			setTimeout(() => setApplyStatus('idle'), 3000);
@@ -529,9 +536,9 @@ export function EffectPanel({ onEffectActivated }: EffectPanelProps = {}) {
 
 	const applyLabel =
 		applyStatus === 'saving' ? 'Wird aktiviert…' :
-		applyStatus === 'success' ? 'Aktiviert' :
-		applyStatus === 'error' ? `Fehler: ${applyError}` :
-		'Anwenden';
+			applyStatus === 'success' ? 'Aktiviert' :
+				applyStatus === 'error' ? `Fehler: ${applyError}` :
+					'Anwenden';
 
 	return (
 		<div class="effect-panel">

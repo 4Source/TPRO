@@ -23,6 +23,7 @@ export default [
 		},
 
 		rules: {
+			'no-unused-vars': 'off',
 			'@stylistic/indent': ['error', 'tab'],
 			'@stylistic/indent-binary-ops': ['error', 'tab'],
 			'@stylistic/quotes': ['error', 'single'],

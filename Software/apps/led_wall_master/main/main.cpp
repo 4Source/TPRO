@@ -1,4 +1,5 @@
 #include "config_manager.hpp"
+#include "effectserver.hpp"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "file_manager.hpp"
@@ -8,7 +9,6 @@
 #include "led_controller.hpp"
 #include "light_effect_manager.hpp"
 #include "network.hpp"
-#include "effectserver.hpp"
 #include "restserver.hpp"
 #include "timeserver.hpp"
 #include "websocket_server.hpp"
@@ -17,25 +17,18 @@
 #include <nvs_flash.h>
 #include <optional>
 
-// TEST Effekte
-#include "effect/blinking_effect.hpp"
-#include "effect/breathing_effect.hpp"
-#include "effect/color_wipe_effect.hpp"
-#include "effect/column_scan_effect.hpp"
-#include "effect/continent_effect.hpp"
-#include "effect/day_night_effect.hpp"
-#include "effect/debug_effect.hpp"
-#include "effect/dvd_effect.hpp"
-#include "effect/equalizer_effect.hpp"
-#include "effect/fast_day_night_effect.hpp"
-#include "effect/fire_effect.hpp"
-#include "effect/matrix_effect.hpp"
-#include "effect/plasma_effect.hpp"
-#include "effect/rainbow_wave_effect.hpp"
-#include "effect/row_scan_effect.hpp"
-#include "effect/scrolling_effect.hpp"
-#include "effect/static_color_effect.hpp"
-#include "effect/timeline_effect.hpp"
+#if LOG_LOCAL_LEVEL <= ESP_LOG_DEBUG
+
+#define DEBUG_TASK_CREATE(task_func, name, stack_size, arg, priority, handle, affinity)                                                              \
+	xTaskCreatePinnedToCore(task_func, name, stack_size, arg, priority, handle, affinity)
+
+#else
+
+#define DEBUG_TASK_CREATE(task_func, name, stack_size, arg, priority, handle, affinity)                                                              \
+	do {                                                                                                                                             \
+	} while (0)
+
+#endif
 
 static constexpr const char *kTag = "main";
 
@@ -44,7 +37,7 @@ static constexpr const char *kTag = "main";
 std::optional<WebsocketServer> g_ws_server;
 static LedFrame main_frame;
 static ConfigManager main_config;
-static LightEffectManager effect_manager(main_frame /*, &main_config*/);
+static LightEffectManager effect_manager(main_frame, &main_config);
 static LedController controller(main_frame);
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
@@ -53,22 +46,22 @@ static constexpr const char *kMonitorTag = "MONITOR";
 void system_monitor_task(void *pv_parameter) {
 
 	while (true) {
-		ESP_LOGD(kMonitorTag, "================ SYSTEM MONITOR ================");
+		ESP_LOGI(kMonitorTag, "================ SYSTEM MONITOR ================");
 
 		// Allgemeiner RAM
-		ESP_LOGD(kMonitorTag, "Free Heap:       %.1f KB", static_cast<float>(esp_get_free_heap_size()) / 1024.0F);
-		ESP_LOGD(kMonitorTag, "Largest Block:   %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Free Heap:       %.1f KB", static_cast<float>(esp_get_free_heap_size()) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Largest Block:   %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)) / 1024.0F);
 
 		// DMA-fähiger RAM
-		ESP_LOGD(kMonitorTag, "Free DMA RAM:    %.1f KB", static_cast<float>(heap_caps_get_free_size(MALLOC_CAP_DMA)) / 1024.0F);
-		ESP_LOGD(kMonitorTag, "Largest DMA:     %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_DMA)) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Free DMA RAM:    %.1f KB", static_cast<float>(heap_caps_get_free_size(MALLOC_CAP_DMA)) / 1024.0F);
+		ESP_LOGI(kMonitorTag, "Largest DMA:     %.1f KB", static_cast<float>(heap_caps_get_largest_free_block(MALLOC_CAP_DMA)) / 1024.0F);
 
 		UBaseType_t stack_watermark = uxTaskGetStackHighWaterMark(nullptr);
-		ESP_LOGD(kMonitorTag, "Monitor Stack:   %lu Bytes free", static_cast<uint32_t>(stack_watermark * 4));
+		ESP_LOGI(kMonitorTag, "Monitor Stack:   %lu Bytes free", static_cast<uint32_t>(stack_watermark * 4));
 
-		ESP_LOGD(kMonitorTag, "================================================");
+		ESP_LOGI(kMonitorTag, "================================================");
 
-		vTaskDelay(pdMS_TO_TICKS(60000));
+		vTaskDelay(pdMS_TO_TICKS(600));
 	}
 }
 /**
@@ -159,7 +152,6 @@ extern "C" void app_main(void) {
 		return;
 	}
 	EffectFactory::writeDefaults("/effects/defaults");
-	// FileManager::print_default_configs(); Sollte später alle defaults ausprinten
 
 	// Load Configuration from SD Card
 	if (main_config.deserialize() != ESP_OK) {
@@ -167,31 +159,10 @@ extern "C" void app_main(void) {
 		main_config.serialize();
 	}
 
-	// Start Effect
-	// std::string current_effect_path = ColumnScanEffect::kDefaultConfigPath;
-	// std::string current_effect_path = RowScanEffect::kDefaultConfigPath;
-
 	vTaskDelay(100);
-	// Effekt Test
-	/*
-	auto scrolling_effect = std::make_shared<ScrollingEffect>();
-	scrolling_effect->set_parameter("text", "Hello World! This is a scrolling text effect demo. :)");
-*/
-
-	// TODO:
-	// auto main_timeline = EffectFactory::generate_from_json(DVDEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
-	// auto main_timeline = EffectFactory::generate_from_json(FireEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
-
-	// auto main_timeline = EffectFactory::generate_from_json(EqualizerEffect::kDefaultConfigPath); // Beide X Beide Y & Farbe
-
-	// auto main_timeline = EffectFactory::generate_from_json(ContinentEffect::kDefaultConfigPath);
-	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_continent.json");
-	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
-	// auto main_timeline = EffectFactory::generate_from_json("/effects/timeline_full.json");
-	// auto main_timeline = EffectFactory::generate_from_json(DayNightEffect::kDefaultConfigPath);
-	// auto main_timeline = EffectFactory::generate_from_json(FastDayNightEffect::kDefaultConfigPath);
-	auto main_timeline = EffectFactory::generate_from_json("/effects/faster_day_night.json");
-
+	effect_manager.set_config_manager(&main_config);
+	vTaskDelay(100);
+	auto main_timeline = EffectFactory::generate_from_json(main_config.get_config("current_effect"));
 	effect_manager.register_effect(main_timeline);
 	effect_manager.set_effect(main_timeline);
 	effect_manager.start();
@@ -203,7 +174,7 @@ extern "C" void app_main(void) {
 	}
 
 	// Starte Monitor Task
-	xTaskCreatePinnedToCore(system_monitor_task, "sys_monitor", 4096, nullptr, 1, nullptr, tskNO_AFFINITY);
+	DEBUG_TASK_CREATE(system_monitor_task, "sys_monitor", 4096, nullptr, 1, nullptr, tskNO_AFFINITY);
 
 	while (true) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);

@@ -14,10 +14,9 @@ type Props = {
 	isCalculating: boolean;
 	gridData: LedData[] | null;
 	sourcePoints: number[][];
-	// eslint-disable-next-line no-unused-vars
+
 	onEffectActivated: (_path: string) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onFileUpload: (_e: Event) => void;
 	onCalculate: () => void;
 	onExport: () => void;
@@ -27,7 +26,6 @@ type Props = {
 	ledNumberInput: string;
 	ledNumberResult: LedData | null;
 
-	// eslint-disable-next-line no-unused-vars
 	onLedInputChange: (_value: string) => void;
 	onLedSearch: () => void;
 	showMap: boolean;
@@ -36,13 +34,10 @@ type Props = {
 	dotSize: number;
 	onToggleMap: () => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onMapOpacityChange: (_value: number) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onDotsOpacityChange: (_value: number) => void;
 
-	// eslint-disable-next-line no-unused-vars
 	onDotSizeChange: (_value: number) => void;
 };
 
@@ -62,8 +57,8 @@ export function SettingsMenu({
 	useEffect(() => {
 		const clean = (t: string) => t.trim().replace(/^"|"$/g, '');
 		Promise.all([
-			fetch('/config?active_from').then(r => r.ok ? r.text() : '').catch(() => ''),
-			fetch('/config?active_to').then(r => r.ok ? r.text() : '').catch(() => ''),
+			fetch('/config?active_from').then(r => (r.ok ? r.text() : '')).catch(() => ''),
+			fetch('/config?active_to').then(r => (r.ok ? r.text() : '')).catch(() => ''),
 		]).then(([from, to]) => {
 			const f = clean(from);
 			const t = clean(to);
@@ -73,7 +68,7 @@ export function SettingsMenu({
 	}, []);
 
 	const [sunStatus, setSunStatus] = useState<string | null>(null);
-	const [sunProgress, setSunProgress] = useState("");
+	const [sunProgress, setSunProgress] = useState('');
 
 	const handleGenerateSunData = () => {
 		if (!gridData) return;
@@ -84,14 +79,15 @@ export function SettingsMenu({
 			x: led.col,
 			y: led.row,
 			lat: led.lat,
-			lon: led.lon
+			lon: led.lon,
 		}));
 
-		setSunStatus("Starte...");
+		setSunStatus('Starte...');
 		startSunDataGeneration(leds, 2024, (status, progress) => {
 			setSunStatus(status);
 			setSunProgress(progress);
 		});
+	};
 	const saveTime = (key: 'active_from' | 'active_to', value: string) => {
 		if (/^\d{2}:\d{2}$/.test(value)) {
 			fetch(`/config?${key}=${encodeURIComponent(value)}`, { method: 'PUT' }).catch(() => { });
@@ -218,22 +214,22 @@ export function SettingsMenu({
 								</button>
 							</div>
 
-								<div class="flex gap-2 mt-2">
-									<button
-										onClick={handleGenerateSunData}
-										disabled={!gridData || sunStatus !== null && sunStatus !== "Abgeschlossen"}
-										class="w-full py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-sm font-semibold"
-									>
-										{sunStatus ? 'Generiere Jahr...' : 'Sonnendaten (Jahr) auf SD'}
-									</button>
+							<div class="flex gap-2 mt-2">
+								<button
+									onClick={handleGenerateSunData}
+									disabled={(!gridData || sunStatus !== null) && sunStatus !== 'Abgeschlossen'}
+									class="w-full py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-sm font-semibold"
+								>
+									{sunStatus ? 'Generiere Jahr...' : 'Sonnendaten (Jahr) auf SD'}
+								</button>
 
-									{sunStatus && (
-										<div class="settings-mono-box mt-1 text-[10px] leading-tight border-amber-500/30">
-											<p class="text-amber-400 font-bold">{sunStatus}</p>
-											<p class="text-gray-400">{sunProgress}</p>
-										</div>
-									)}
-								</div>
+								{sunStatus && (
+									<div class="settings-mono-box mt-1 text-[10px] leading-tight border-amber-500/30">
+										<p class="text-amber-400 font-bold">{sunStatus}</p>
+										<p class="text-gray-400">{sunProgress}</p>
+									</div>
+								)}
+							</div>
 						</div>
 
 						{/* Koordinaten */}

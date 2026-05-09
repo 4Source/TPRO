@@ -6,6 +6,7 @@ esp_err_t RainbowWaveEffect::get_led_data(LedFrame &frame, DateTime::TimeCompone
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	const uint64_t absolute_ms = (static_cast<uint64_t>(time_stamp.second) * 1000ULL) + static_cast<uint64_t>(time_stamp.millisecond);
 
@@ -93,14 +94,20 @@ esp_err_t RainbowWaveEffect::set_parameter(const char *name, const char *value) 
 // -----------------
 esp_err_t RainbowWaveEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
 		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);

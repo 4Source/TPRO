@@ -142,7 +142,7 @@ esp_err_t FastDayNightEffect::get_led_data(LedFrame &frame, DateTime::TimeCompon
 	if (DayNight::shared_led_data == nullptr || DayNight::shared_led_data->empty()) {
 		return ESP_ERR_INVALID_STATE;
 	}
-
+	frame.clear_led_data();
 	auto now_ms = static_cast<uint32_t>(esp_timer_get_time() / 1000);
 
 	if (speedup_.value <= 1) {

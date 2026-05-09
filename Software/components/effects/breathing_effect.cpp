@@ -102,17 +102,23 @@ esp_err_t BreathingEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t BreathingEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(root.get(), "name"); cJSON_IsString(item))
 		name_ = item->valuestring;
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "cycle_time"); cJSON_IsNumber(item))
 		cycle_time_.value = static_cast<uint32_t>(item->valuedouble);
@@ -127,9 +133,9 @@ esp_err_t BreathingEffect::deserialize(std::string path) {
 		scale_.value = static_cast<uint8_t>(item->valuedouble);
 
 	if (auto *arr = cJSON_GetObjectItem(params, "color"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 3) {
-		color_.value.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		color_.value.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		color_.value.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		color_.value.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		color_.value.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	}
 
 	return ESP_OK;

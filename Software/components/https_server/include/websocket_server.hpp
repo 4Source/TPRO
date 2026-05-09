@@ -38,4 +38,6 @@ class WebsocketServer {
 
 	// FreeRTOS Task-Funktion
 	static void ws_broadcast_task(void *arg);
+
+	static std::array<uint8_t, (3 * CONFIG_LED_COLUMNS) * (CONFIG_LED_CH1_ROWS + CONFIG_LED_CH2_ROWS + CONFIG_LED_CH3_ROWS)> snapshot;
 };

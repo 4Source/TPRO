@@ -8,7 +8,6 @@ type Props = {
 	gridData: LedData[] | null;
 	sourcePoints: number[][];
 
-	// eslint-disable-next-line no-unused-vars
 	onFileUpload: (_e: Event) => void;
 	onCalculate: () => void;
 	onExport: () => void;

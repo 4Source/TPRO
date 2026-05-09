@@ -69,4 +69,5 @@ class LightEffectManager : public ConfigObserver {
 	std::vector<std::shared_ptr<Effect>> available_effects_;
 
 	static void effect_task(void *arg);
+	bool isDurringWorkingHours(const DateTime::TimeComponents &time_stamp);
 };

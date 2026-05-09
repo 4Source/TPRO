@@ -6,6 +6,7 @@ esp_err_t FireEffect::get_led_data(LedFrame &frame, DateTime::TimeComponents tim
 	if (frame.led_data.empty() || frame.led_data[0].empty()) {
 		return ESP_ERR_INVALID_ARG;
 	}
+	frame.clear_led_data();
 
 	const float brg_val = static_cast<float>(default_brightness_.value) / 255.0F;
 
@@ -136,14 +137,20 @@ esp_err_t FireEffect::set_parameter(const char *name, const char *value) {
 // -----------------
 esp_err_t FireEffect::deserialize(std::string path) {
 	auto opt_json = FileManager::read_file(path);
-	if (!opt_json) { return ESP_FAIL; }
+	if (!opt_json) {
+		return ESP_FAIL;
+	}
 	this->path_ = path;
 
 	EffectParser::cJSON_ptr root(cJSON_Parse(opt_json->c_str()), cJSON_Delete);
-	if (!root) { return ESP_FAIL; }
+	if (!root) {
+		return ESP_FAIL;
+	}
 
 	auto *params = cJSON_GetObjectItem(root.get(), "parameters");
-	if (!params) { return ESP_OK; }
+	if (!params) {
+		return ESP_OK;
+	}
 
 	if (auto *item = cJSON_GetObjectItem(params, "default_brightness"); cJSON_IsNumber(item))
 		default_brightness_.value = static_cast<uint8_t>(item->valuedouble);
@@ -165,7 +172,7 @@ esp_err_t FireEffect::deserialize(std::string path) {
 
 	if (auto *arr = cJSON_GetObjectItem(params, "led_range"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 2) {
 		led_range_start_.value = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
-		led_range_end_.value   = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
+		led_range_end_.value = static_cast<uint32_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
 	}
 
 	return ESP_OK;

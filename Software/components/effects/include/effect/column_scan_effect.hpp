@@ -26,7 +26,7 @@ class ColumnScanEffect : public Effect {
 	std::string get_name() override;
 
 	static constexpr const char *kType = "column_scan";
-	static constexpr const char *kDefaultConfigPath = "/effects/column_scan.json";
+	static constexpr const char *kDefaultConfigPath = "/effects/defaults/column_scan.json";
 
   private:
 	std::string path{kDefaultConfigPath};

@@ -135,12 +135,12 @@ esp_err_t BlinkingEffect::deserialize(std::string path) {
 		if (!cJSON_IsArray(arr) || cJSON_GetArraySize(arr) < 3) {
 			return;
 		}
-		out.red   = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
+		out.red = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 0)->valuedouble);
 		out.green = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 1)->valuedouble);
-		out.blue  = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
+		out.blue = static_cast<uint8_t>(cJSON_GetArrayItem(arr, 2)->valuedouble);
 	};
 
-	read_rgb(params, "color_on",  color_on_.value);
+	read_rgb(params, "color_on", color_on_.value);
 	read_rgb(params, "color_off", color_off_.value);
 
 	if (auto *arr = cJSON_GetObjectItem(params, "led_range"); cJSON_IsArray(arr) && cJSON_GetArraySize(arr) >= 2) {
